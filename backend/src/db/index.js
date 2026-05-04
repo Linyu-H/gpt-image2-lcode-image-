@@ -10,38 +10,52 @@ const db = new Database(env.dbPath)
 const schema = fs.readFileSync(path.join(env.backendDir, 'src', 'db', 'schema.sql'), 'utf8')
 db.exec(schema)
 
-const adminColumns = db.prepare('PRAGMA table_info(admin_settings)').all().map((column) => column.name)
+function getColumns(tableName) {
+  const table = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?").get(tableName)
+  if (!table) {
+    return []
+  }
+  return db.prepare(`PRAGMA table_info(${tableName})`).all().map((column) => column.name)
+}
+
+const adminColumns = getColumns('admin_settings')
 if (!adminColumns.includes('shared_tokens_encrypted')) {
   db.prepare('ALTER TABLE admin_settings ADD COLUMN shared_tokens_encrypted TEXT DEFAULT ""').run()
-  db.prepare('UPDATE admin_settings SET shared_tokens_encrypted = api_key_encrypted WHERE shared_tokens_encrypted = "" AND api_key_encrypted IS NOT NULL').run()
+  if (adminColumns.includes('api_key_encrypted')) {
+    db.prepare('UPDATE admin_settings SET shared_tokens_encrypted = api_key_encrypted WHERE shared_tokens_encrypted = "" AND api_key_encrypted IS NOT NULL').run()
+  }
 }
 
-if (!adminColumns.includes('shared_token_encrypted')) {
+const adminColumnsAfterSharedTokens = getColumns('admin_settings')
+if (!adminColumnsAfterSharedTokens.includes('shared_token_encrypted')) {
   db.prepare('ALTER TABLE admin_settings ADD COLUMN shared_token_encrypted TEXT DEFAULT ""').run()
-  db.prepare('UPDATE admin_settings SET shared_token_encrypted = shared_tokens_encrypted WHERE shared_token_encrypted = "" AND shared_tokens_encrypted IS NOT NULL').run()
+  if (adminColumnsAfterSharedTokens.includes('shared_tokens_encrypted')) {
+    db.prepare('UPDATE admin_settings SET shared_token_encrypted = shared_tokens_encrypted WHERE shared_token_encrypted = "" AND shared_tokens_encrypted IS NOT NULL').run()
+  }
 }
 
-if (!adminColumns.includes('site_base_url')) {
+const adminColumnsFinal = getColumns('admin_settings')
+if (!adminColumnsFinal.includes('site_base_url')) {
   db.prepare('ALTER TABLE admin_settings ADD COLUMN site_base_url TEXT DEFAULT ""').run()
 }
 
-if (!adminColumns.includes('email_auth_user')) {
+if (!adminColumnsFinal.includes('email_auth_user')) {
   db.prepare('ALTER TABLE admin_settings ADD COLUMN email_auth_user TEXT DEFAULT ""').run()
 }
 
-if (!adminColumns.includes('email_auth_pass_encrypted')) {
+if (!adminColumnsFinal.includes('email_auth_pass_encrypted')) {
   db.prepare('ALTER TABLE admin_settings ADD COLUMN email_auth_pass_encrypted TEXT DEFAULT ""').run()
 }
 
-if (!adminColumns.includes('allow_register')) {
+if (!adminColumnsFinal.includes('allow_register')) {
   db.prepare('ALTER TABLE admin_settings ADD COLUMN allow_register INTEGER NOT NULL DEFAULT 1').run()
 }
 
-if (!adminColumns.includes('require_invite_code')) {
+if (!adminColumnsFinal.includes('require_invite_code')) {
   db.prepare('ALTER TABLE admin_settings ADD COLUMN require_invite_code INTEGER NOT NULL DEFAULT 0').run()
 }
 
-const userColumns = db.prepare('PRAGMA table_info(users)').all().map((column) => column.name)
+const userColumns = getColumns('users')
 if (!userColumns.includes('is_banned')) {
   db.prepare('ALTER TABLE users ADD COLUMN is_banned INTEGER NOT NULL DEFAULT 0').run()
 }
@@ -65,7 +79,7 @@ if (!userColumns.includes('updated_at')) {
   db.prepare('ALTER TABLE users ADD COLUMN updated_at TEXT NOT NULL DEFAULT ""').run()
 }
 
-const profileColumns = db.prepare('PRAGMA table_info(user_profiles)').all().map((column) => column.name)
+const profileColumns = getColumns('user_profiles')
 if (!profileColumns.includes('personal_token_encrypted')) {
   db.prepare('ALTER TABLE user_profiles ADD COLUMN personal_token_encrypted TEXT DEFAULT ""').run()
 }
@@ -79,17 +93,17 @@ if (!profileColumns.includes('updated_at')) {
   db.prepare('ALTER TABLE user_profiles ADD COLUMN updated_at TEXT NOT NULL DEFAULT ""').run()
 }
 
-const generatedColumns = db.prepare('PRAGMA table_info(generated_images)').all().map((column) => column.name)
+const generatedColumns = getColumns('generated_images')
 if (!generatedColumns.includes('user_id')) {
   db.prepare('ALTER TABLE generated_images ADD COLUMN user_id TEXT').run()
 }
 
-const logColumns = db.prepare('PRAGMA table_info(generation_logs)').all().map((column) => column.name)
-if (!logColumns.includes('user_id')) {
+const logColumns = getColumns('generation_logs')
+if (logColumns.length && !logColumns.includes('user_id')) {
   db.prepare('ALTER TABLE generation_logs ADD COLUMN user_id TEXT').run()
 }
 
-const featuredPromptColumns = db.prepare('PRAGMA table_info(featured_prompts)').all().map((column) => column.name)
+const featuredPromptColumns = getColumns('featured_prompts')
 if (!featuredPromptColumns.includes('prompt')) {
   db.prepare('ALTER TABLE featured_prompts ADD COLUMN prompt TEXT NOT NULL DEFAULT ""').run()
 }
@@ -103,7 +117,7 @@ if (!featuredPromptColumns.includes('updated_at')) {
   db.prepare('ALTER TABLE featured_prompts ADD COLUMN updated_at TEXT NOT NULL DEFAULT ""').run()
 }
 
-const featuredColumns = db.prepare('PRAGMA table_info(featured_examples)').all().map((column) => column.name)
+const featuredColumns = getColumns('featured_examples')
 if (!featuredColumns.includes('prompt_id')) {
   db.prepare('ALTER TABLE featured_examples ADD COLUMN prompt_id INTEGER NOT NULL DEFAULT 1').run()
 }
