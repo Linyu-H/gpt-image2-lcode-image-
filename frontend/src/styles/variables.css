@@ -1,0 +1,39 @@
+:root {
+  --color-primary: #39a86b;
+  --color-primary-hover: #2f915b;
+  --color-primary-soft: rgba(57, 168, 107, 0.14);
+  --color-bg: #f4f8f4;
+  --color-bg-accent: radial-gradient(circle at top left, rgba(111, 193, 139, 0.18), transparent 30%), linear-gradient(180deg, #f8fbf8 0%, #eef5ef 100%);
+  --color-card: rgba(255, 255, 255, 0.88);
+  --color-card-strong: #ffffff;
+  --color-card-muted: #eef5ef;
+  --color-border: rgba(157, 181, 161, 0.42);
+  --color-text: #1f2a1f;
+  --color-text-secondary: #617261;
+  --color-text-soft: #7f8c7f;
+  --color-danger: #d55b5b;
+  --color-success: #2f915b;
+  --shadow-card: 0 18px 50px rgba(34, 72, 41, 0.08);
+  --shadow-soft: 0 8px 24px rgba(34, 72, 41, 0.05);
+  --backdrop-blur: blur(16px);
+}
+
+[data-theme='eye'] {
+  --color-primary: #76a8ff;
+  --color-primary-hover: #90b8ff;
+  --color-primary-soft: rgba(118, 168, 255, 0.16);
+  --color-bg: #0e1726;
+  --color-bg-accent: radial-gradient(circle at top left, rgba(76, 123, 204, 0.28), transparent 28%), linear-gradient(180deg, #0f1728 0%, #0a1120 100%);
+  --color-card: rgba(18, 28, 46, 0.82);
+  --color-card-strong: #121c2e;
+  --color-card-muted: #17233a;
+  --color-border: rgba(122, 145, 191, 0.24);
+  --color-text: #f4f7ff;
+  --color-text-secondary: #cfe0ff;
+  --color-text-soft: #eaf2ff;
+  --color-danger: #ff8f95;
+  --color-success: #8fc2ff;
+  --shadow-card: 0 20px 60px rgba(2, 6, 23, 0.36);
+  --shadow-soft: 0 10px 30px rgba(2, 6, 23, 0.28);
+  --backdrop-blur: blur(20px);
+}

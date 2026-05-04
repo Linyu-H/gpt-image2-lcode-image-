@@ -1,0 +1,26 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file:
+      - backend/.env.example
+    environment:
+      FRONTEND_BASE_URL: http://localhost:8080
+      CORS_ORIGINS: http://localhost:8080,http://127.0.0.1:8080
+    ports:
+      - "3002:3001"
+    volumes:
+      - ./backend/data.sqlite:/app/data.sqlite
+      - ./backend/uploads:/app/uploads
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_BASE_URL: http://localhost:3002/api
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend

@@ -1,0 +1,187 @@
+import fs from 'fs'
+import path from 'path'
+import Database from 'better-sqlite3'
+import { env } from '../config/env.js'
+import { nowIso } from '../utils/time.js'
+
+fs.mkdirSync(env.uploadsDir, { recursive: true })
+
+const db = new Database(env.dbPath)
+const schema = fs.readFileSync(path.join(env.backendDir, 'src', 'db', 'schema.sql'), 'utf8')
+db.exec(schema)
+
+const adminColumns = db.prepare('PRAGMA table_info(admin_settings)').all().map((column) => column.name)
+if (!adminColumns.includes('shared_tokens_encrypted')) {
+  db.prepare('ALTER TABLE admin_settings ADD COLUMN shared_tokens_encrypted TEXT DEFAULT ""').run()
+  db.prepare('UPDATE admin_settings SET shared_tokens_encrypted = api_key_encrypted WHERE shared_tokens_encrypted = "" AND api_key_encrypted IS NOT NULL').run()
+}
+
+if (!adminColumns.includes('shared_token_encrypted')) {
+  db.prepare('ALTER TABLE admin_settings ADD COLUMN shared_token_encrypted TEXT DEFAULT ""').run()
+  db.prepare('UPDATE admin_settings SET shared_token_encrypted = shared_tokens_encrypted WHERE shared_token_encrypted = "" AND shared_tokens_encrypted IS NOT NULL').run()
+}
+
+if (!adminColumns.includes('site_base_url')) {
+  db.prepare('ALTER TABLE admin_settings ADD COLUMN site_base_url TEXT DEFAULT ""').run()
+}
+
+if (!adminColumns.includes('email_auth_user')) {
+  db.prepare('ALTER TABLE admin_settings ADD COLUMN email_auth_user TEXT DEFAULT ""').run()
+}
+
+if (!adminColumns.includes('email_auth_pass_encrypted')) {
+  db.prepare('ALTER TABLE admin_settings ADD COLUMN email_auth_pass_encrypted TEXT DEFAULT ""').run()
+}
+
+if (!adminColumns.includes('allow_register')) {
+  db.prepare('ALTER TABLE admin_settings ADD COLUMN allow_register INTEGER NOT NULL DEFAULT 1').run()
+}
+
+if (!adminColumns.includes('require_invite_code')) {
+  db.prepare('ALTER TABLE admin_settings ADD COLUMN require_invite_code INTEGER NOT NULL DEFAULT 0').run()
+}
+
+const userColumns = db.prepare('PRAGMA table_info(users)').all().map((column) => column.name)
+if (!userColumns.includes('is_banned')) {
+  db.prepare('ALTER TABLE users ADD COLUMN is_banned INTEGER NOT NULL DEFAULT 0').run()
+}
+if (!userColumns.includes('email')) {
+  db.prepare('ALTER TABLE users ADD COLUMN email TEXT NOT NULL DEFAULT ""').run()
+  db.prepare(`
+    UPDATE users
+    SET email = CASE
+      WHEN trim(email) = '' THEN lower(username) || '@local.lcode-image'
+      ELSE email
+    END
+  `).run()
+}
+if (!userColumns.includes('email_verified')) {
+  db.prepare('ALTER TABLE users ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 1').run()
+}
+if (!userColumns.includes('created_at')) {
+  db.prepare('ALTER TABLE users ADD COLUMN created_at TEXT NOT NULL DEFAULT ""').run()
+}
+if (!userColumns.includes('updated_at')) {
+  db.prepare('ALTER TABLE users ADD COLUMN updated_at TEXT NOT NULL DEFAULT ""').run()
+}
+
+const profileColumns = db.prepare('PRAGMA table_info(user_profiles)').all().map((column) => column.name)
+if (!profileColumns.includes('personal_token_encrypted')) {
+  db.prepare('ALTER TABLE user_profiles ADD COLUMN personal_token_encrypted TEXT DEFAULT ""').run()
+}
+if (!profileColumns.includes('personal_image_api_base_url')) {
+  db.prepare('ALTER TABLE user_profiles ADD COLUMN personal_image_api_base_url TEXT DEFAULT ""').run()
+}
+if (!profileColumns.includes('created_at')) {
+  db.prepare('ALTER TABLE user_profiles ADD COLUMN created_at TEXT NOT NULL DEFAULT ""').run()
+}
+if (!profileColumns.includes('updated_at')) {
+  db.prepare('ALTER TABLE user_profiles ADD COLUMN updated_at TEXT NOT NULL DEFAULT ""').run()
+}
+
+const generatedColumns = db.prepare('PRAGMA table_info(generated_images)').all().map((column) => column.name)
+if (!generatedColumns.includes('user_id')) {
+  db.prepare('ALTER TABLE generated_images ADD COLUMN user_id TEXT').run()
+}
+
+const logColumns = db.prepare('PRAGMA table_info(generation_logs)').all().map((column) => column.name)
+if (!logColumns.includes('user_id')) {
+  db.prepare('ALTER TABLE generation_logs ADD COLUMN user_id TEXT').run()
+}
+
+const featuredPromptColumns = db.prepare('PRAGMA table_info(featured_prompts)').all().map((column) => column.name)
+if (!featuredPromptColumns.includes('prompt')) {
+  db.prepare('ALTER TABLE featured_prompts ADD COLUMN prompt TEXT NOT NULL DEFAULT ""').run()
+}
+if (!featuredPromptColumns.includes('sort_order')) {
+  db.prepare('ALTER TABLE featured_prompts ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0').run()
+}
+if (!featuredPromptColumns.includes('created_at')) {
+  db.prepare('ALTER TABLE featured_prompts ADD COLUMN created_at TEXT NOT NULL DEFAULT ""').run()
+}
+if (!featuredPromptColumns.includes('updated_at')) {
+  db.prepare('ALTER TABLE featured_prompts ADD COLUMN updated_at TEXT NOT NULL DEFAULT ""').run()
+}
+
+const featuredColumns = db.prepare('PRAGMA table_info(featured_examples)').all().map((column) => column.name)
+if (!featuredColumns.includes('prompt_id')) {
+  db.prepare('ALTER TABLE featured_examples ADD COLUMN prompt_id INTEGER NOT NULL DEFAULT 1').run()
+}
+if (featuredColumns.includes('prompt_index')) {
+  db.prepare(`
+    UPDATE featured_examples
+    SET prompt_id = CASE
+      WHEN prompt_id = 1 AND prompt_index IS NOT NULL THEN prompt_index + 1
+      ELSE prompt_id
+    END
+    WHERE prompt_index IS NOT NULL
+  `).run()
+}
+if (!featuredColumns.includes('prompt')) {
+  db.prepare('ALTER TABLE featured_examples ADD COLUMN prompt TEXT NOT NULL DEFAULT ""').run()
+}
+if (!featuredColumns.includes('image_url')) {
+  db.prepare('ALTER TABLE featured_examples ADD COLUMN image_url TEXT NOT NULL DEFAULT ""').run()
+}
+if (!featuredColumns.includes('storage_path')) {
+  db.prepare('ALTER TABLE featured_examples ADD COLUMN storage_path TEXT NOT NULL DEFAULT ""').run()
+}
+if (!featuredColumns.includes('created_at')) {
+  db.prepare('ALTER TABLE featured_examples ADD COLUMN created_at TEXT NOT NULL DEFAULT ""').run()
+}
+if (!featuredColumns.includes('updated_at')) {
+  db.prepare('ALTER TABLE featured_examples ADD COLUMN updated_at TEXT NOT NULL DEFAULT ""').run()
+}
+
+const defaultFeaturedPrompts = [
+  '薄雾清晨中的绿色玻璃温室，柔和侧光，安静、通透、治愈感。',
+  '雨后石板路旁的小书店橱窗，暖黄色灯光，电影感构图，细腻反射。',
+  '海边黄昏时分的白色露台，一杯热茶，一张木椅，风很轻，极简宁静。',
+  '春日花园里的橘猫趴在长椅上打盹，空气湿润，画面柔焦，温柔插画感。',
+  '山间木屋的夜晚窗景，屋内暖光映出植物剪影，安静、克制、富有呼吸感。',
+]
+
+const promptCount = db.prepare('SELECT COUNT(*) as total FROM featured_prompts').get().total
+if (!promptCount) {
+  const insertPrompt = db.prepare(`
+    INSERT INTO featured_prompts (prompt, sort_order, created_at, updated_at)
+    VALUES (?, ?, ?, ?)
+  `)
+  const insertMany = db.transaction((prompts) => {
+    prompts.forEach((prompt, index) => {
+      const timestamp = nowIso()
+      insertPrompt.run(prompt, index + 1, timestamp, timestamp)
+    })
+  })
+  insertMany(defaultFeaturedPrompts)
+}
+
+const settings = db.prepare('SELECT * FROM admin_settings WHERE id = 1').get()
+if (!settings) {
+  db.prepare(`
+    INSERT INTO admin_settings (
+      id,
+      shared_token_encrypted,
+      image_api_base_url,
+      site_base_url,
+      email_auth_user,
+      email_auth_pass_encrypted,
+      daily_limit,
+      cleanup_cron,
+      allow_register,
+      require_invite_code,
+      updated_at
+    )
+    VALUES (1, '', '', '', '', '', ?, ?, 1, 0, ?)
+  `).run(env.defaultDailyLimit, env.defaultCleanupCron, nowIso())
+} else {
+  if (!settings.updated_at) {
+    db.prepare('UPDATE admin_settings SET updated_at = ? WHERE id = 1').run(nowIso())
+  }
+
+  if (!settings.shared_token_encrypted && settings.shared_tokens_encrypted) {
+    db.prepare('UPDATE admin_settings SET shared_token_encrypted = ? WHERE id = 1').run(settings.shared_tokens_encrypted)
+  }
+}
+
+export { db }
