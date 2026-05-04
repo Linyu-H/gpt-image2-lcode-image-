@@ -3,9 +3,10 @@ import cors from 'cors'
 import path from 'path'
 import adminRoutes from './routes/admin.js'
 import authRoutes from './routes/auth.js'
+import communityRoutes from './routes/community.js'
 import imageRoutes from './routes/image.js'
 import { getStatistics } from './controllers/adminController.js'
-import { getFeaturedExample } from './controllers/publicController.js'
+import { getAnnouncement, getFeaturedExample } from './controllers/publicController.js'
 import { errorHandler } from './middleware/errorHandler.js'
 import { env } from './config/env.js'
 
@@ -36,9 +37,11 @@ export function createApp() {
 
   app.get('/api/statistics', getStatistics)
   app.get('/api/featured-example', getFeaturedExample)
+  app.get('/api/announcement', getAnnouncement)
 
   app.use('/api/admin', adminRoutes)
   app.use('/api/auth', authRoutes)
+  app.use('/api/community', communityRoutes)
   app.use('/api/images', imageRoutes)
   app.use(errorHandler)
 

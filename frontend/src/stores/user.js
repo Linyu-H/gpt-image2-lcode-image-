@@ -1,6 +1,15 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { fetchMe, fetchUserProfile, userLogin, userRegister } from '../api/auth'
+import {
+  confirmAvatar,
+  fetchMe,
+  fetchUserProfile,
+  generateAvatarPreview,
+  saveUserProfile,
+  uploadAvatarPreview,
+  userLogin,
+  userRegister,
+} from '../api/auth'
 import { userTokenStorageKey } from '../api/request'
 
 export const useUserStore = defineStore('user', () => {
@@ -73,6 +82,31 @@ export const useUserStore = defineStore('user', () => {
     profile.value = nextProfile
   }
 
+  async function saveProfile(payload) {
+    await saveUserProfile(payload)
+    await loadProfile()
+  }
+
+  async function createAvatarUploadPreview(file) {
+    return uploadAvatarPreview(file)
+  }
+
+  async function createAvatarGenerationPreview(style) {
+    return generateAvatarPreview(style)
+  }
+
+  async function confirmAvatarPreview(previewId) {
+    const result = await confirmAvatar(previewId)
+    if (profile.value) {
+      profile.value = {
+        ...profile.value,
+        avatarUrl: result.avatarUrl,
+        avatarUpdatedAt: result.avatarUpdatedAt,
+      }
+    }
+    return result
+  }
+
   function logout() {
     token.value = ''
     user.value = null
@@ -92,6 +126,10 @@ export const useUserStore = defineStore('user', () => {
     loadProfile,
     bootstrap,
     setProfile,
+    saveProfile,
+    createAvatarUploadPreview,
+    createAvatarGenerationPreview,
+    confirmAvatarPreview,
     logout,
   }
 })

@@ -5,6 +5,11 @@ export async function adminLogin(payload) {
   return data
 }
 
+export async function changeAdminPassword(payload) {
+  const { data } = await request.post('/admin/change-password', payload)
+  return data
+}
+
 export async function testUserApiKey(apiKey, baseUrl) {
   const { data } = await request.post('/admin/user-token/test', { apiKey, baseUrl })
   return data
@@ -15,6 +20,11 @@ export async function fetchAdminStatus() {
   return data
 }
 
+export async function fetchAnnouncementConfig() {
+  const { data } = await request.get('/admin/announcement')
+  return data
+}
+
 export async function saveUpstreamConfig(payload) {
   const { data } = await request.post('/admin/config/upstream', payload)
   return data
@@ -22,6 +32,11 @@ export async function saveUpstreamConfig(payload) {
 
 export async function saveRegisterPolicy(payload) {
   const { data } = await request.post('/admin/config/register-policy', payload)
+  return data
+}
+
+export async function saveAnnouncement(payload) {
+  const { data } = await request.post('/admin/announcement', payload)
   return data
 }
 
@@ -87,6 +102,21 @@ export async function updateUserBanStatus(userId, isBanned) {
 
 export async function resetUserPassword(userId, password) {
   const { data } = await request.post(`/admin/users/${userId}/reset-password`, { password })
+  return data
+}
+
+export async function fetchAdminImages() {
+  const { data } = await request.get('/admin/images')
+  return data
+}
+
+export async function deleteAdminImage(id) {
+  const { data } = await request.delete(`/admin/images/${id}`)
+  return data
+}
+
+export async function clearAllAdminImages() {
+  const { data } = await request.post('/admin/images/clear')
   return data
 }
 

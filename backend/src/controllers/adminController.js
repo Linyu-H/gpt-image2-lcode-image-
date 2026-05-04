@@ -3,7 +3,8 @@ import jwt from 'jsonwebtoken'
 import { env } from '../config/env.js'
 import { db } from '../db/index.js'
 import { encrypt, decrypt } from '../services/encryptionService.js'
-import { createFeaturedPrompt, deleteFeaturedPrompt, listFeaturedPrompts } from '../services/featuredExampleService.js'
+import { createFeaturedPrompt, deleteFeaturedPrompt, getCurrentFeaturedExample, listFeaturedPrompts } from '../services/featuredExampleService.js'
+import { clearAllActiveGeneratedImages, deleteGeneratedImageRecord, getGeneratedImageByIdForAdmin, listGeneratedImagesForAdmin } from '../services/generatedImageAdminService.js'
 import { testImageApi } from '../services/chatgptSessionService.js'
 import { runExpiredCleanup, startCleanupJob } from '../services/cleanupService.js'
 import { getEmailConfig, saveEmailConfig } from '../services/emailConfigService.js'
@@ -55,17 +56,41 @@ export function buildStatisticsPayload() {
 
 export async function login(req, res) {
   const { username, password } = req.body
+  const settings = readSettings()
 
-  if (username !== env.adminUsername || password !== env.adminPassword) {
+  if (username !== env.adminUsername || !bcrypt.compareSync(password, settings?.admin_password_hash || '')) {
     return res.status(401).json({ message: '账号或密码错误' })
   }
 
   const token = jwt.sign({ username, role: 'admin' }, env.jwtSecret, { expiresIn: '7d' })
-  res.json({ token })
+  res.json({
+    token,
+    username,
+    mustChangePassword: adminMustChangePassword(settings),
+  })
 }
 
 function readSettings() {
   return db.prepare('SELECT * FROM admin_settings WHERE id = 1').get()
+}
+
+function adminMustChangePassword(settings = readSettings()) {
+  return settings?.force_admin_password_change === 1
+}
+
+function buildAnnouncementPayload() {
+  const announcement = db.prepare(`
+    SELECT title, content, is_enabled as isEnabled, updated_at as updatedAt
+    FROM site_announcements
+    WHERE id = 1
+  `).get()
+
+  return {
+    title: announcement?.title || '',
+    content: announcement?.content || '',
+    isEnabled: announcement?.isEnabled === 1,
+    updatedAt: announcement?.updatedAt || '',
+  }
 }
 
 export function getConfigStatus(req, res) {
@@ -81,10 +106,55 @@ export function getConfigStatus(req, res) {
     cleanupCron: settings?.cleanup_cron,
     allowRegister: settings?.allow_register !== 0,
     requireInviteCode: settings?.require_invite_code === 1,
+    mustChangePassword: adminMustChangePassword(settings),
     emailAuthUser: emailConfig.authUser,
     hasEmailAuthPass: Boolean(emailConfig.authPass),
     updatedAt: settings?.updated_at,
   })
+}
+
+export function getAnnouncementConfig(req, res) {
+  res.json(buildAnnouncementPayload())
+}
+
+export function saveAnnouncement(req, res) {
+  const title = String(req.body?.title || '').trim()
+  const content = String(req.body?.content || '').trim()
+  const isEnabled = req.body?.isEnabled === true ? 1 : 0
+
+  db.prepare(`
+    UPDATE site_announcements
+    SET title = ?, content = ?, is_enabled = ?, updated_at = ?
+    WHERE id = 1
+  `).run(title, content, isEnabled, nowIso())
+
+  res.json({ message: '网站公告已保存' })
+}
+
+export function changePassword(req, res) {
+  const settings = readSettings()
+  const currentPassword = String(req.body?.currentPassword || '')
+  const newPassword = String(req.body?.newPassword || '')
+
+  if (!bcrypt.compareSync(currentPassword, settings?.admin_password_hash || '')) {
+    return res.status(400).json({ message: '当前密码错误' })
+  }
+
+  if (newPassword.length < 6) {
+    return res.status(400).json({ message: '新密码至少需要 6 个字符' })
+  }
+
+  if (newPassword === currentPassword) {
+    return res.status(400).json({ message: '新密码不能与当前密码相同' })
+  }
+
+  db.prepare(`
+    UPDATE admin_settings
+    SET admin_password_hash = ?, force_admin_password_change = 0, updated_at = ?
+    WHERE id = 1
+  `).run(bcrypt.hashSync(newPassword, 10), nowIso())
+
+  res.json({ message: '管理员密码修改成功' })
 }
 
 export async function saveUpstreamConfig(req, res) {
@@ -245,6 +315,53 @@ export function resetUserPassword(req, res) {
     .run(bcrypt.hashSync(password, 10), nowIso(), userId)
 
   res.json({ message: '用户密码已重置' })
+}
+
+export function getAdminImages(req, res) {
+  const generatedImages = listGeneratedImagesForAdmin()
+  const featuredExample = getCurrentFeaturedExample()
+
+  const images = [
+    ...generatedImages,
+    ...(featuredExample?.imageUrl
+      ? [{
+          id: 'featured-example',
+          userId: null,
+          username: '首页示例',
+          prompt: featuredExample.prompt,
+          agent: 'image',
+          imageUrl: featuredExample.imageUrl,
+          sourceType: 'featured',
+          createdAt: featuredExample.updatedAt,
+          expiresAt: '-',
+          status: 'active',
+          resourceType: 'featured',
+        }]
+      : []),
+  ].sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')))
+
+  res.json(images)
+}
+
+export function deleteAdminImage(req, res) {
+  const imageId = String(req.params.id || '').trim()
+  const image = getGeneratedImageByIdForAdmin(imageId)
+
+  if (!image) {
+    return res.status(404).json({ message: '图片不存在' })
+  }
+
+  if (image.status !== 'active') {
+    return res.status(400).json({ message: '图片已失效，无法重复删除' })
+  }
+
+  deleteGeneratedImageRecord(image)
+  res.json({ message: '图片已删除' })
+}
+
+export function clearAllGeneratedImages(req, res) {
+  const cleared = clearAllActiveGeneratedImages()
+  res.json({ message: `已清空 ${cleared} 张图片`, cleared })
 }
 
 export function getStatistics(req, res) {

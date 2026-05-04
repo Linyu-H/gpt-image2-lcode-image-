@@ -49,3 +49,20 @@ export async function testUserProfile(payload) {
   const { data } = await request.post('/auth/profile/test', payload)
   return data
 }
+
+export async function uploadAvatarPreview(file) {
+  const formData = new FormData()
+  formData.append('file', file)
+  const { data } = await request.post('/auth/profile/avatar/upload-preview', formData)
+  return data
+}
+
+export async function generateAvatarPreview(style) {
+  const { data } = await request.post('/auth/profile/avatar/generate-preview', { style })
+  return data
+}
+
+export async function confirmAvatar(previewId) {
+  const { data } = await request.post('/auth/profile/avatar/confirm', { previewId })
+  return data
+}

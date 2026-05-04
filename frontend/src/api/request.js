@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'
+const baseURL = import.meta.env.VITE_API_BASE_URL || '/api'
 export const adminTokenStorageKey = 'lcode_admin_token'
 export const userTokenStorageKey = 'lcode_user_token'
 

@@ -1,9 +1,13 @@
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import HeaderBar from '../components/HeaderBar.vue'
 import ApiKeySettingModal from '../components/ApiKeySettingModal.vue'
+import SiteAnnouncementModal from '../components/SiteAnnouncementModal.vue'
+import { fetchAnnouncement } from '../api/image'
 
 const apiKeyModalOpen = ref(false)
+const announcementOpen = ref(false)
+const announcement = ref({ title: '', content: '', isEnabled: false, updatedAt: '' })
 
 function openApiKeyModal() {
   apiKeyModalOpen.value = true
@@ -12,12 +16,57 @@ function openApiKeyModal() {
 function closeApiKeyModal() {
   apiKeyModalOpen.value = false
 }
+
+function openAnnouncement() {
+  if (announcement.value.isEnabled) {
+    announcementOpen.value = true
+  }
+}
+
+function closeAnnouncement() {
+  announcementOpen.value = false
+}
+
+function getAnnouncementDismissKey(payload) {
+  const today = new Date().toISOString().slice(0, 10)
+  return `lcode_announcement_dismissed_${today}_${payload.updatedAt || 'none'}`
+}
+
+function getAnnouncementSeenKey(payload) {
+  return `lcode_announcement_seen_${payload.updatedAt || 'none'}`
+}
+
+function dismissAnnouncementToday() {
+  if (announcement.value.isEnabled) {
+    localStorage.setItem(getAnnouncementDismissKey(announcement.value), '1')
+    sessionStorage.setItem(getAnnouncementSeenKey(announcement.value), '1')
+  }
+  announcementOpen.value = false
+}
+
+async function loadAnnouncement() {
+  const result = await fetchAnnouncement()
+  announcement.value = result
+  if (!result.isEnabled) {
+    announcementOpen.value = false
+    return
+  }
+
+  const dismissed = localStorage.getItem(getAnnouncementDismissKey(result)) === '1'
+  const seenInSession = sessionStorage.getItem(getAnnouncementSeenKey(result)) === '1'
+  announcementOpen.value = !dismissed && !seenInSession
+  if (announcementOpen.value) {
+    sessionStorage.setItem(getAnnouncementSeenKey(result), '1')
+  }
+}
+
+onMounted(loadAnnouncement)
 </script>
 
 <template>
   <div class="shell">
     <div class="page">
-      <HeaderBar :on-open-api-key="openApiKeyModal" />
+      <HeaderBar :on-open-api-key="openApiKeyModal" :on-open-announcement="openAnnouncement" :has-announcement="announcement.isEnabled" />
       <main class="layout-main">
         <slot />
       </main>
@@ -27,6 +76,7 @@ function closeApiKeyModal() {
       </footer>
     </div>
     <ApiKeySettingModal :open="apiKeyModalOpen" @close="closeApiKeyModal" />
+    <SiteAnnouncementModal :open="announcementOpen" :announcement="announcement" @close="closeAnnouncement" @dismiss-today="dismissAnnouncementToday" />
   </div>
 </template>
 

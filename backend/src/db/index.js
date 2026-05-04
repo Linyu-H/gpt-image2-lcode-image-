@@ -1,6 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import Database from 'better-sqlite3'
+import bcrypt from 'bcryptjs'
 import { env } from '../config/env.js'
 import { nowIso } from '../utils/time.js'
 
@@ -47,12 +48,20 @@ if (!adminColumnsFinal.includes('email_auth_pass_encrypted')) {
   db.prepare('ALTER TABLE admin_settings ADD COLUMN email_auth_pass_encrypted TEXT DEFAULT ""').run()
 }
 
+if (!adminColumnsFinal.includes('admin_password_hash')) {
+  db.prepare('ALTER TABLE admin_settings ADD COLUMN admin_password_hash TEXT NOT NULL DEFAULT ""').run()
+}
+
 if (!adminColumnsFinal.includes('allow_register')) {
   db.prepare('ALTER TABLE admin_settings ADD COLUMN allow_register INTEGER NOT NULL DEFAULT 1').run()
 }
 
 if (!adminColumnsFinal.includes('require_invite_code')) {
   db.prepare('ALTER TABLE admin_settings ADD COLUMN require_invite_code INTEGER NOT NULL DEFAULT 0').run()
+}
+
+if (!adminColumnsFinal.includes('force_admin_password_change')) {
+  db.prepare('ALTER TABLE admin_settings ADD COLUMN force_admin_password_change INTEGER NOT NULL DEFAULT 1').run()
 }
 
 const userColumns = getColumns('users')
@@ -86,6 +95,15 @@ if (!profileColumns.includes('personal_token_encrypted')) {
 if (!profileColumns.includes('personal_image_api_base_url')) {
   db.prepare('ALTER TABLE user_profiles ADD COLUMN personal_image_api_base_url TEXT DEFAULT ""').run()
 }
+if (!profileColumns.includes('avatar_url')) {
+  db.prepare('ALTER TABLE user_profiles ADD COLUMN avatar_url TEXT NOT NULL DEFAULT ""').run()
+}
+if (!profileColumns.includes('avatar_storage_path')) {
+  db.prepare('ALTER TABLE user_profiles ADD COLUMN avatar_storage_path TEXT NOT NULL DEFAULT ""').run()
+}
+if (!profileColumns.includes('avatar_updated_at')) {
+  db.prepare('ALTER TABLE user_profiles ADD COLUMN avatar_updated_at TEXT NOT NULL DEFAULT ""').run()
+}
 if (!profileColumns.includes('created_at')) {
   db.prepare('ALTER TABLE user_profiles ADD COLUMN created_at TEXT NOT NULL DEFAULT ""').run()
 }
@@ -99,7 +117,19 @@ if (!generatedColumns.includes('user_id')) {
 }
 
 const logColumns = getColumns('generation_logs')
-if (logColumns.length && !logColumns.includes('user_id')) {
+if (!logColumns.length) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS generation_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT,
+      request_ip TEXT NOT NULL,
+      prompt TEXT NOT NULL,
+      status TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+    )
+  `)
+} else if (!logColumns.includes('user_id')) {
   db.prepare('ALTER TABLE generation_logs ADD COLUMN user_id TEXT').run()
 }
 
@@ -147,6 +177,54 @@ if (!featuredColumns.includes('updated_at')) {
   db.prepare('ALTER TABLE featured_examples ADD COLUMN updated_at TEXT NOT NULL DEFAULT ""').run()
 }
 
+const announcementColumns = getColumns('site_announcements')
+if (!announcementColumns.includes('title')) {
+  db.prepare('ALTER TABLE site_announcements ADD COLUMN title TEXT NOT NULL DEFAULT ""').run()
+}
+if (!announcementColumns.includes('content')) {
+  db.prepare('ALTER TABLE site_announcements ADD COLUMN content TEXT NOT NULL DEFAULT ""').run()
+}
+if (!announcementColumns.includes('is_enabled')) {
+  db.prepare('ALTER TABLE site_announcements ADD COLUMN is_enabled INTEGER NOT NULL DEFAULT 0').run()
+}
+if (!announcementColumns.includes('updated_at')) {
+  db.prepare('ALTER TABLE site_announcements ADD COLUMN updated_at TEXT NOT NULL DEFAULT ""').run()
+}
+
+const avatarPreviewColumns = getColumns('avatar_previews')
+if (!avatarPreviewColumns.length) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS avatar_previews (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      image_url TEXT NOT NULL,
+      storage_path TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `)
+}
+
+const communityPostColumns = getColumns('community_posts')
+if (!communityPostColumns.length) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS community_posts (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      image_id TEXT NOT NULL,
+      image_url TEXT NOT NULL,
+      prompt TEXT NOT NULL,
+      content TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'active',
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (image_id) REFERENCES generated_images(id) ON DELETE CASCADE
+    )
+  `)
+}
+
 const defaultFeaturedPrompts = [
   '薄雾清晨中的绿色玻璃温室，柔和侧光，安静、通透、治愈感。',
   '雨后石板路旁的小书店橱窗，暖黄色灯光，电影感构图，细腻反射。',
@@ -175,6 +253,7 @@ if (!settings) {
   db.prepare(`
     INSERT INTO admin_settings (
       id,
+      admin_password_hash,
       shared_token_encrypted,
       image_api_base_url,
       site_base_url,
@@ -184,10 +263,11 @@ if (!settings) {
       cleanup_cron,
       allow_register,
       require_invite_code,
+      force_admin_password_change,
       updated_at
     )
-    VALUES (1, '', '', '', '', '', ?, ?, 1, 0, ?)
-  `).run(env.defaultDailyLimit, env.defaultCleanupCron, nowIso())
+    VALUES (1, ?, '', '', '', '', '', ?, ?, 1, 0, 1, ?)
+  `).run(bcrypt.hashSync(env.adminPassword, 10), env.defaultDailyLimit, env.defaultCleanupCron, nowIso())
 } else {
   if (!settings.updated_at) {
     db.prepare('UPDATE admin_settings SET updated_at = ? WHERE id = 1').run(nowIso())
@@ -196,6 +276,18 @@ if (!settings) {
   if (!settings.shared_token_encrypted && settings.shared_tokens_encrypted) {
     db.prepare('UPDATE admin_settings SET shared_token_encrypted = ? WHERE id = 1').run(settings.shared_tokens_encrypted)
   }
+
+  if (!settings.admin_password_hash) {
+    db.prepare('UPDATE admin_settings SET admin_password_hash = ? WHERE id = 1').run(bcrypt.hashSync(env.adminPassword, 10))
+  }
+}
+
+const announcement = db.prepare('SELECT * FROM site_announcements WHERE id = 1').get()
+if (!announcement) {
+  db.prepare(`
+    INSERT INTO site_announcements (id, title, content, is_enabled, updated_at)
+    VALUES (1, '', '', 0, ?)
+  `).run(nowIso())
 }
 
 export { db }

@@ -9,6 +9,14 @@ const props = defineProps({
     type: Function,
     default: null,
   },
+  onOpenAnnouncement: {
+    type: Function,
+    default: null,
+  },
+  hasAnnouncement: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const route = useRoute()
@@ -20,15 +28,22 @@ const navItems = computed(() => [
   { label: '首页', path: '/' },
   { label: '开始生成', path: '/create' },
   { label: '历史记录', path: '/history' },
+  { label: '社区', path: '/community' },
   { label: '登录账号', path: '/login', hidden: userStore.isLoggedIn },
   { label: '管理后台', path: '/admin' },
 ].filter((item) => !item.hidden))
 
 const userLabel = computed(() => userStore.user?.username || '')
+const userAvatar = computed(() => userStore.profile?.avatarUrl || '/lcode-image-logo.png')
 
 function navigate(path) {
   mobileMenuOpen.value = false
   router.push(path)
+}
+
+function goProfile() {
+  mobileMenuOpen.value = false
+  router.push('/profile')
 }
 
 function logoutUser() {
@@ -64,7 +79,11 @@ function logoutUser() {
     </nav>
 
     <div class="header-actions">
-      <span v-if="userStore.isLoggedIn" class="user-pill">{{ userLabel }}</span>
+      <button v-if="hasAnnouncement" type="button" class="button-secondary bell-button action-pill" aria-label="查看公告" @click="onOpenAnnouncement?.()">铃铛</button>
+      <button v-if="userStore.isLoggedIn" type="button" class="user-chip" @click="goProfile">
+        <img class="user-chip-avatar" :src="userAvatar" alt="用户头像" />
+        <span>{{ userLabel }}</span>
+      </button>
       <button v-if="userStore.isLoggedIn" type="button" class="button-secondary action-pill" @click="onOpenApiKey?.()">个人配置</button>
       <button v-if="userStore.isLoggedIn" type="button" class="button-secondary action-pill" @click="logoutUser">退出账号</button>
       <ThemeToggle />
@@ -81,6 +100,8 @@ function logoutUser() {
       >
         {{ item.label }}
       </button>
+      <button v-if="hasAnnouncement" type="button" class="mobile-link" @click="onOpenAnnouncement?.(); mobileMenuOpen = false">查看公告</button>
+      <button v-if="userStore.isLoggedIn" type="button" class="mobile-link" @click="goProfile">个人主页</button>
       <button v-if="userStore.isLoggedIn" type="button" class="mobile-link" @click="onOpenApiKey?.(); mobileMenuOpen = false">个人配置</button>
       <button v-if="userStore.isLoggedIn" type="button" class="mobile-link" @click="logoutUser">退出账号</button>
     </div>
@@ -166,19 +187,32 @@ function logoutUser() {
   flex-wrap: wrap;
 }
 
-.user-pill {
-  min-height: 38px;
+.user-chip {
+  min-height: 42px;
   display: inline-flex;
   align-items: center;
-  padding: 0 14px;
+  gap: 10px;
+  padding: 0 14px 0 8px;
+  border: none;
   border-radius: 999px;
   background: var(--color-card-muted);
   color: var(--color-text-soft);
-  font-size: 13px;
+}
+
+.user-chip-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.8);
 }
 
 .action-pill {
   border-radius: 999px;
+}
+
+.bell-button {
+  min-width: 44px;
 }
 
 .mobile-menu,

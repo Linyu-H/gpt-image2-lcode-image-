@@ -1,15 +1,42 @@
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import AppLayout from '../layouts/AppLayout.vue'
+import CommunityPostComposer from '../components/CommunityPostComposer.vue'
 import ImageCard from '../components/ImageCard.vue'
+import { createCommunityPost } from '../api/image'
 import { useChatStore } from '../stores/chat'
+import { useToastStore } from '../stores/toast'
 import { useUserStore } from '../stores/user'
 
 const chatStore = useChatStore()
 const userStore = useUserStore()
+const toastStore = useToastStore()
+const composerOpen = ref(false)
+const selectedImage = ref(null)
+
 const historyCopy = computed(() => userStore.isLoggedIn
-  ? '这里只展示当前账号名下最近 3 天内仍有效的生成图片。你可以直接复用 Prompt、查看原图，或手动删除自己的记录。'
+  ? '这里只展示当前账号名下最近 3 天内仍有效的生成图片。你可以复用 Prompt、查看原图、删除记录，或把自己的作品发布到社区。'
   : '这里只展示当前游客态最近 3 天内仍有效的生成图片。登录账号后，历史记录会按账号独立保存。')
+
+function openComposer(item) {
+  if (!userStore.isLoggedIn) {
+    toastStore.error('请先登录账号后再发布到社区')
+    return
+  }
+  selectedImage.value = item
+  composerOpen.value = true
+}
+
+async function submitPost(payload) {
+  try {
+    await createCommunityPost(payload)
+    composerOpen.value = false
+    selectedImage.value = null
+    toastStore.success('已发布到社区')
+  } catch (error) {
+    toastStore.error(error.response?.data?.message || '发布失败')
+  }
+}
 
 onMounted(() => {
   chatStore.loadHistory()
@@ -35,8 +62,10 @@ onMounted(() => {
           v-for="item in chatStore.history"
           :key="item.id"
           :item="item"
+          :allow-post="userStore.isLoggedIn"
           @delete="chatStore.deleteImage($event)"
           @reuse="chatStore.draft = $event"
+          @post="openComposer"
         />
       </div>
       <div v-else class="empty-history">
@@ -44,6 +73,8 @@ onMounted(() => {
         <p class="muted">暂无历史记录，先去首页生成你的第一张图片吧。</p>
       </div>
     </section>
+
+    <CommunityPostComposer :open="composerOpen" :image="selectedImage" @close="composerOpen = false" @submit="submitPost" />
   </AppLayout>
 </template>
 

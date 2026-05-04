@@ -10,6 +10,11 @@ export async function fetchFeaturedExample() {
   return data
 }
 
+export async function fetchAnnouncement() {
+  const { data } = await request.get('/announcement')
+  return data
+}
+
 export async function generateImage(payload) {
   if (payload?.file) {
     const formData = new FormData()
@@ -31,5 +36,25 @@ export async function fetchHistory() {
 
 export async function deleteImage(id) {
   const { data } = await request.delete(`/images/${id}`)
+  return data
+}
+
+export async function fetchCommunityFeed() {
+  const { data } = await request.get('/community')
+  return data
+}
+
+export async function fetchCommunityPostDetail(id) {
+  const { data } = await request.get(`/community/${id}`)
+  return data
+}
+
+export async function createCommunityPost(payload) {
+  const { data } = await request.post('/community', payload)
+  return data
+}
+
+export async function deleteCommunityPost(id) {
+  const { data } = await request.delete(`/community/${id}`)
   return data
 }

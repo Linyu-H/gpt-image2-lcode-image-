@@ -2,7 +2,8 @@ import fs from 'fs'
 import { v4 as uuidv4 } from 'uuid'
 import { db } from '../db/index.js'
 import { generateImage } from '../services/chatgptSessionService.js'
-import { saveImageFromUrl, removeStoredImage } from '../services/imageStorageService.js'
+import { deleteGeneratedImageRecord } from '../services/generatedImageAdminService.js'
+import { saveImageFromUrl } from '../services/imageStorageService.js'
 import { validatePrompt } from '../services/promptGuardService.js'
 import { addDays, nowIso } from '../utils/time.js'
 import { decrypt } from '../services/encryptionService.js'
@@ -27,7 +28,6 @@ function resolveAccessToken(req) {
     return {
       accessToken: userToken,
       baseUrl,
-      siteBaseUrl: settings?.site_base_url || '',
       sourceType: 'private',
       userId: req.user.id,
     }
@@ -49,7 +49,6 @@ function resolveAccessToken(req) {
   return {
     accessToken: sharedToken,
     baseUrl: adminBaseUrl,
-    siteBaseUrl: settings?.site_base_url || '',
     sourceType: 'shared',
     userId: req.user?.id || null,
   }
@@ -67,12 +66,10 @@ export async function generate(req, res, next) {
     const { prompt, agent = 'image' } = req.body
     validatePrompt(prompt)
 
-    const { accessToken, baseUrl, siteBaseUrl, sourceType, userId } = resolveAccessToken(req)
+    const { accessToken, baseUrl, sourceType, userId } = resolveAccessToken(req)
     const upstream = await generateImage({ prompt, agent, accessToken, baseUrl, inputImage: req.file || null })
     const stored = await saveImageFromUrl(upstream.imageUrl)
-    const finalImageUrl = siteBaseUrl
-      ? `${siteBaseUrl.replace(/\/$/, '')}/${stored.publicPath.replace(/^\//, '')}`
-      : stored.publicUrl
+    const finalImageUrl = stored.publicUrl
 
     const id = uuidv4()
     const createdAt = nowIso()
@@ -133,7 +130,6 @@ export function deleteImage(req, res) {
     return res.status(404).json({ message: '图片不存在' })
   }
 
-  removeStoredImage(image.storage_path)
-  db.prepare(`UPDATE generated_images SET status = 'deleted' WHERE id = ?`).run(req.params.id)
+  deleteGeneratedImageRecord(image)
   res.json({ message: '图片已删除' })
 }

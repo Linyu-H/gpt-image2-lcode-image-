@@ -6,9 +6,13 @@ const props = defineProps({
     type: Object,
     required: true,
   },
+  allowPost: {
+    type: Boolean,
+    default: false,
+  },
 })
 
-const emit = defineEmits(['delete', 'reuse'])
+const emit = defineEmits(['delete', 'reuse', 'post'])
 const now = ref(Date.now())
 let timer = null
 
@@ -47,6 +51,7 @@ onBeforeUnmount(() => {
       <div class="image-actions">
         <button type="button" class="button-secondary" @click="emit('reuse', item.prompt)">复用 Prompt</button>
         <a class="button-secondary link-button" :href="item.imageUrl" target="_blank" rel="noreferrer">查看原图</a>
+        <button v-if="allowPost" type="button" class="button-secondary" @click="emit('post', item)">发布到社区</button>
         <button type="button" class="button-danger" @click="emit('delete', item.id)">删除</button>
       </div>
     </div>

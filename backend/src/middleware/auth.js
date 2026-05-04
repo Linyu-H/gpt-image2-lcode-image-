@@ -19,6 +19,13 @@ export function requireAdmin(req, res, next) {
     if (payload.role !== 'admin') {
       return res.status(403).json({ message: '无权访问管理员接口' })
     }
+
+    const settings = db.prepare('SELECT force_admin_password_change FROM admin_settings WHERE id = 1').get()
+    const allowDuringPasswordReset = ['/change-password', '/config/status', '/announcement'].includes(req.path)
+    if (settings?.force_admin_password_change === 1 && !allowDuringPasswordReset) {
+      return res.status(403).json({ message: '请先修改管理员密码', mustChangePassword: true })
+    }
+
     req.admin = payload
     next()
   } catch {

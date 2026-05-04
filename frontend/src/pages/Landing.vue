@@ -292,7 +292,11 @@ async function loadStatistics() {
 }
 
 async function loadFeaturedExample() {
-  featuredExample.value = await fetchFeaturedExample()
+  try {
+    featuredExample.value = await fetchFeaturedExample()
+  } catch {
+    featuredExample.value = { prompt: '', imageUrl: '', updatedAt: '' }
+  }
 }
 
 watch([trendSeries, sourceSeries, retentionSeries], syncCharts)

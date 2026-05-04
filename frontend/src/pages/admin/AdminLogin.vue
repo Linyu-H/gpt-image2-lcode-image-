@@ -5,8 +5,8 @@ import { useAdminStore } from '../../stores/admin'
 
 const router = useRouter()
 const adminStore = useAdminStore()
-const username = ref('admin')
-const password = ref('admin123')
+const username = ref('')
+const password = ref('')
 const error = ref('')
 const loading = ref(false)
 

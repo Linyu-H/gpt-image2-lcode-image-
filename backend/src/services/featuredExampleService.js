@@ -1,7 +1,7 @@
 import { db } from '../db/index.js'
 import { decrypt } from './encryptionService.js'
 import { generateImage } from './chatgptSessionService.js'
-import { saveImageFromUrl, removeStoredImage } from './imageStorageService.js'
+import { normalizePublicImageUrl, saveImageFromUrl, removeStoredImage } from './imageStorageService.js'
 import { nowIso } from '../utils/time.js'
 
 const featuredRotationStartDate = '2026-05-04'
@@ -14,7 +14,6 @@ function resolveSharedGenerationConfig() {
   const settings = readAdminSettings()
   const accessToken = decrypt(settings?.shared_token_encrypted || '')
   const baseUrl = settings?.image_api_base_url || ''
-  const siteBaseUrl = settings?.site_base_url || ''
 
   if (!baseUrl) {
     const error = new Error('管理员尚未配置图片 API 地址')
@@ -31,14 +30,7 @@ function resolveSharedGenerationConfig() {
   return {
     accessToken,
     baseUrl,
-    siteBaseUrl,
   }
-}
-
-function normalizeStoredUrl(publicPath, publicUrl, siteBaseUrl) {
-  return siteBaseUrl
-    ? `${siteBaseUrl.replace(/\/$/, '')}/${publicPath.replace(/^\//, '')}`
-    : publicUrl
 }
 
 export function listFeaturedPrompts() {
@@ -108,18 +100,29 @@ function getRotationIndex(totalPrompts, referenceDate = new Date()) {
 }
 
 export function getCurrentFeaturedExample() {
-  return db.prepare(`
-    SELECT prompt_id as promptId, prompt, image_url as imageUrl, updated_at as updatedAt
+  const example = db.prepare(`
+    SELECT prompt_id as promptId, prompt, image_url as imageUrl, storage_path as storagePath, updated_at as updatedAt
     FROM featured_examples
     WHERE id = 1
-  `).get() || null
+  `).get()
+
+  if (!example) {
+    return null
+  }
+
+  return {
+    promptId: example.promptId,
+    prompt: example.prompt,
+    imageUrl: normalizePublicImageUrl(example.imageUrl, example.storagePath),
+    updatedAt: example.updatedAt,
+  }
 }
 
 async function persistFeaturedExample(promptRecord, upstreamImage) {
   const existing = db.prepare('SELECT storage_path FROM featured_examples WHERE id = 1').get()
   const featuredColumns = db.prepare('PRAGMA table_info(featured_examples)').all().map((column) => column.name)
   const stored = await saveImageFromUrl(upstreamImage.imageUrl)
-  const finalImageUrl = normalizeStoredUrl(stored.publicPath, stored.publicUrl, upstreamImage.siteBaseUrl)
+  const finalImageUrl = stored.publicUrl
   const timestamp = nowIso()
 
   if (featuredColumns.includes('prompt_index')) {
@@ -160,9 +163,9 @@ async function persistFeaturedExample(promptRecord, upstreamImage) {
 }
 
 export async function generateFeaturedExampleForPrompt(promptRecord) {
-  const { accessToken, baseUrl, siteBaseUrl } = resolveSharedGenerationConfig()
+  const { accessToken, baseUrl } = resolveSharedGenerationConfig()
   const upstream = await generateImage({ prompt: promptRecord.prompt, agent: 'image', accessToken, baseUrl })
-  return persistFeaturedExample(promptRecord, { ...upstream, siteBaseUrl })
+  return persistFeaturedExample(promptRecord, upstream)
 }
 
 export async function refreshFeaturedExample(referenceDate = new Date()) {

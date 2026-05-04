@@ -30,10 +30,15 @@ export const useToastStore = defineStore('toast', () => {
     return push(message, 'success')
   }
 
+  function error(message) {
+    return push(message, 'error')
+  }
+
   return {
     items,
     remove,
     push,
     success,
+    error,
   }
 })

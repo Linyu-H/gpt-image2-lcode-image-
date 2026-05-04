@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename)
 const backendDir = path.resolve(__dirname, '../..')
 const rootDir = path.resolve(backendDir, '..')
 const frontendBaseUrl = (process.env.FRONTEND_BASE_URL || 'http://127.0.0.1:5173').replace(/\/$/, '')
-const corsOrigins = (process.env.CORS_ORIGINS || frontendBaseUrl)
+const corsOrigins = (process.env.CORS_ORIGINS || `${frontendBaseUrl},http://localhost:5173,http://127.0.0.1:5173,http://[::1]:5173`)
   .split(',')
   .map((origin) => origin.trim().replace(/\/$/, ''))
   .filter(Boolean)
@@ -18,7 +18,7 @@ export const env = {
   port: Number(process.env.PORT || 3001),
   jwtSecret: process.env.JWT_SECRET || 'change-this-secret',
   adminUsername: process.env.ADMIN_USERNAME || 'admin',
-  adminPassword: process.env.ADMIN_PASSWORD || 'admin123',
+  adminPassword: process.env.ADMIN_PASSWORD || 'lcode',
   encryptionSecret: (process.env.ENCRYPTION_SECRET || 'change-this-encryption-secret-32').padEnd(32, '0').slice(0, 32),
   chatgptSessionUrl: process.env.CHATGPT_SESSION_URL || 'https://chatgpt.com/api/auth/session',
   image2ApiBaseUrl: process.env.IMAGE2_API_BASE_URL || '',
