@@ -303,7 +303,7 @@ VITE_API_BASE_URL=https://api.your-domain.com/api
 启动：
 
 ```bash
-docker compose up --build -d
+docker compose -p lcode-image up --build -d
 ```
 
 默认地址：
@@ -312,13 +312,18 @@ docker compose up --build -d
 - 后端 API：`http://127.0.0.1:3002/api`
 - 后端健康检查：`http://127.0.0.1:3002/health`
 
+说明：
+
+- 浏览器访问前端时，前端会通过 Nginx 反向代理把 `/api`、`/uploads`、`/health` 转发到容器内后端
+- 因此公开访问前端时不需要把浏览器请求直接打到 `localhost:3002`
+
 常用命令：
 
 ```bash
-docker compose ps
-docker compose logs -f backend
-docker compose logs -f frontend
-docker compose down
+docker compose -p lcode-image ps
+docker compose -p lcode-image logs -f backend
+docker compose -p lcode-image logs -f frontend
+docker compose -p lcode-image down
 ```
 
 ## 管理员初始化
@@ -547,6 +552,11 @@ Default container addresses:
 - Backend API: `http://127.0.0.1:3002/api`
 - Backend health check: `http://127.0.0.1:3002/health`
 
+Notes:
+
+- When users open the frontend, Nginx proxies `/api`, `/uploads`, and `/health` to the backend container
+- Browsers should access the deployed site through the frontend address instead of calling `localhost:3002` directly
+
 ## Default Admin Account
 
 - Username: `admin`
@@ -674,6 +684,11 @@ docker compose -p lcode-image up --build -d
 - フロントエンド: `http://127.0.0.1:8080`
 - バックエンド API: `http://127.0.0.1:3002/api`
 - ヘルスチェック: `http://127.0.0.1:3002/health`
+
+補足:
+
+- フロントエンドにアクセスすると、Nginx が `/api`、`/uploads`、`/health` をバックエンドコンテナへリバースプロキシします
+- ブラウザからは `localhost:3002` を直接叩かず、公開されているフロントエンド URL を利用してください
 
 ## 初期管理者アカウント
 
