@@ -12,7 +12,7 @@ const props = defineProps({
   },
   onOpenAnnouncement: {
     type: Function,
-    default: null,
+    default: null,      
   },
   hasAnnouncement: {
     type: Boolean,
@@ -82,10 +82,6 @@ function logoutUser() {
 
     <div class="header-actions">
       <button v-if="hasAnnouncement" type="button" class="button-secondary bell-button action-pill" :aria-label="i18n.t('viewAnnouncement')" @click="onOpenAnnouncement?.()">{{ i18n.t('viewAnnouncement') }}</button>
-      <button v-if="userStore.isLoggedIn" type="button" class="user-chip" @click="goProfile">
-        <img class="user-chip-avatar" :src="userAvatar" alt="用户头像" />
-        <span>{{ userLabel }}</span>
-      </button>
       <button v-if="userStore.isLoggedIn" type="button" class="button-secondary action-pill" @click="onOpenApiKey?.()">{{ i18n.t('personalConfig') }}</button>
       <button v-if="userStore.isLoggedIn" type="button" class="button-secondary action-pill" @click="logoutUser">{{ i18n.t('logout') }}</button>
       <button type="button" class="button-secondary action-pill" @click="i18n.toggleLocale">{{ i18n.t('language') }}</button>
@@ -189,26 +185,6 @@ function logoutUser() {
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
-}
-
-.user-chip {
-  min-height: 42px;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0 14px 0 8px;
-  border: none;
-  border-radius: 999px;
-  background: var(--color-card-muted);
-  color: var(--color-text-soft);
-}
-
-.user-chip-avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 10px;
-  object-fit: cover;
-  background: rgba(255, 255, 255, 0.8);
 }
 
 .action-pill {
