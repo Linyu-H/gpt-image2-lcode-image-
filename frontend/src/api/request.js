@@ -6,7 +6,7 @@ export const userTokenStorageKey = 'lcode_user_token'
 
 const request = axios.create({
   baseURL,
-  timeout: 120000,
+  timeout: 300000,
 })
 
 request.interceptors.request.use((config) => {

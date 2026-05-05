@@ -47,36 +47,38 @@ async function submit() {
 
 <template>
   <Teleport to="body">
-    <div v-if="open && image" class="composer-overlay" @click.self="emit('close')">
-      <section class="composer-modal card" role="dialog" aria-modal="true" aria-labelledby="community-post-title">
-        <div class="composer-header">
-          <div>
-            <p class="composer-eyebrow">发布到社区</p>
-            <h2 id="community-post-title">分享这张图片</h2>
+    <Transition name="modal-fade">
+      <div v-if="open && image" class="composer-overlay" @click.self="emit('close')">
+        <section class="composer-modal card" role="dialog" aria-modal="true" aria-labelledby="community-post-title">
+          <div class="composer-header">
+            <div>
+              <p class="composer-eyebrow">发布到社区</p>
+              <h2 id="community-post-title">分享这张图片</h2>
+            </div>
+            <button type="button" class="button-secondary icon-button" aria-label="关闭发布窗口" @click="emit('close')">×</button>
           </div>
-          <button type="button" class="button-secondary icon-button" aria-label="关闭发布窗口" @click="emit('close')">×</button>
-        </div>
 
-        <div class="composer-preview">
-          <img :src="image.imageUrl" :alt="image.prompt" loading="lazy" />
-          <p class="muted">{{ image.prompt }}</p>
-        </div>
+          <div class="composer-preview">
+            <img :src="image.imageUrl" :alt="image.prompt" loading="lazy" />
+            <p class="muted">{{ image.prompt }}</p>
+          </div>
 
-        <label class="composer-field">
-          <span>分享文字</span>
-          <textarea v-model="form.content" class="textarea" rows="5" placeholder="说说这张图的灵感、用途或你想表达的内容。" />
-        </label>
+          <label class="composer-field">
+            <span>分享文字</span>
+            <textarea v-model="form.content" class="textarea" rows="5" placeholder="说说这张图的灵感、用途或你想表达的内容。" />
+          </label>
 
-        <p v-if="error" class="composer-error">{{ error }}</p>
+          <p v-if="error" class="composer-error">{{ error }}</p>
 
-        <div class="composer-actions">
-          <button type="button" class="button-secondary" @click="emit('close')">取消</button>
-          <button type="button" class="button-primary" :disabled="loading" @click="submit">
-            {{ loading ? '发布中...' : '确认发布' }}
-          </button>
-        </div>
-      </section>
-    </div>
+          <div class="composer-actions">
+            <button type="button" class="button-secondary" @click="emit('close')">取消</button>
+            <button type="button" class="button-primary" :disabled="loading" @click="submit">
+              {{ loading ? '发布中...' : '确认发布' }}
+            </button>
+          </div>
+        </section>
+      </div>
+    </Transition>
   </Teleport>
 </template>
 
@@ -96,6 +98,28 @@ async function submit() {
 .composer-modal {
   width: min(640px, 100%);
   padding: 22px;
+  transform-origin: 50% 46%;
+}
+
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: opacity 0.22s ease;
+}
+
+.modal-fade-enter-active .composer-modal,
+.modal-fade-leave-active .composer-modal {
+  transition: opacity 0.24s ease, transform 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+}
+
+.modal-fade-enter-from .composer-modal,
+.modal-fade-leave-to .composer-modal {
+  opacity: 0;
+  transform: translateY(14px) scale(0.96);
 }
 
 .composer-header {

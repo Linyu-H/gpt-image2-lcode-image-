@@ -8,6 +8,8 @@ import Profile from '../pages/Profile.vue'
 import UserLogin from '../pages/UserLogin.vue'
 import AdminLogin from '../pages/admin/AdminLogin.vue'
 import AdminDashboard from '../pages/admin/AdminDashboard.vue'
+import AdminUsers from '../pages/admin/AdminUsers.vue'
+import AdminImages from '../pages/admin/AdminImages.vue'
 import { adminTokenStorageKey, userTokenStorageKey } from '../api/request'
 
 const router = createRouter({
@@ -22,6 +24,8 @@ const router = createRouter({
     { path: '/profile', name: 'profile', component: Profile },
     { path: '/admin/login', name: 'admin-login', component: AdminLogin },
     { path: '/admin', name: 'admin-dashboard', component: AdminDashboard },
+    { path: '/admin/users', name: 'admin-users', component: AdminUsers },
+    { path: '/admin/images', name: 'admin-images', component: AdminImages },
   ],
   scrollBehavior() {
     return { top: 0, behavior: 'smooth' }
@@ -29,7 +33,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to) => {
-  if (to.name === 'admin-dashboard') {
+  if (['admin-dashboard', 'admin-users', 'admin-images'].includes(to.name)) {
     const token = localStorage.getItem(adminTokenStorageKey)
     if (!token) {
       return '/admin/login'

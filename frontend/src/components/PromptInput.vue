@@ -1,4 +1,8 @@
 <script setup>
+import { useI18nStore } from '../stores/i18n'
+
+const i18n = useI18nStore()
+
 const props = defineProps({
   modelValue: {
     type: String,
@@ -37,36 +41,36 @@ function onFileChange(event) {
   <div class="prompt-box card" :class="{ 'prompt-box-loading': loading }">
     <div class="prompt-heading">
       <div>
-        <h3>开始生成</h3>
-        <p class="muted">{{ isLoggedIn ? '支持自然语言描述，当前会优先使用你的个人身份令牌；未配置时才会回退到共享身份令牌。' : '支持自然语言描述，当前将使用共享身份令牌；登录后也可以切换到你自己的个人身份令牌。' }}</p>
+        <h3>{{ i18n.t('promptTitle') }}</h3>
+        <p class="muted">{{ isLoggedIn ? i18n.t('promptCopyLoggedIn') : i18n.t('promptCopyGuest') }}</p>
       </div>
-      <span class="prompt-badge">聊天式生成</span>
+      <span class="prompt-badge">{{ i18n.t('chatGeneration') }}</span>
     </div>
 
     <div v-if="!isLoggedIn" class="guest-notice">
-      <span>当前是游客体验模式</span>
-      <RouterLink to="/login" class="guest-link">登录账号后可长期保存个人配置与历史</RouterLink>
+      <span>{{ i18n.t('guestNotice') }}</span>
+      <RouterLink to="/login" class="guest-link">{{ i18n.t('guestLoginHint') }}</RouterLink>
     </div>
 
     <textarea
       :value="modelValue"
       class="textarea"
-      placeholder="输入你的图片描述，比如：生成一只在森林中散步的白猫"
+      :placeholder="i18n.t('promptPlaceholder')"
       @input="emit('update:modelValue', $event.target.value)"
       @keydown="onKeydown"
     />
 
     <div class="upload-row">
-      <label class="upload-button button-secondary" for="prompt-file-input">上传参考图</label>
+      <label class="upload-button button-secondary" for="prompt-file-input">{{ i18n.t('uploadReference') }}</label>
       <input id="prompt-file-input" class="file-input" type="file" accept="image/*" @change="onFileChange" />
       <span v-if="selectedFileName" class="upload-file-name">{{ selectedFileName }}</span>
-      <button v-if="selectedFileName" type="button" class="button-secondary upload-clear" @click="emit('clear-file')">清除图片</button>
+      <button v-if="selectedFileName" type="button" class="button-secondary upload-clear" @click="emit('clear-file')">{{ i18n.t('clearImage') }}</button>
     </div>
 
     <div class="prompt-footer">
-      <span class="muted footer-tip">Enter 发送，Ctrl/Cmd + Enter 换行</span>
+      <span class="muted footer-tip">{{ i18n.t('enterTip') }}</span>
       <button class="button-primary submit-button" type="button" :disabled="loading" @click="emit('submit')">
-        {{ loading ? '正在生成图片...' : '开始生成图片' }}
+        {{ loading ? i18n.t('generatingImage') : i18n.t('generateImage') }}
       </button>
     </div>
   </div>

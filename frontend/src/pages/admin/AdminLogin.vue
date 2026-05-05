@@ -2,6 +2,9 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAdminStore } from '../../stores/admin'
+import { useI18nStore } from '../../stores/i18n'
+
+const i18n = useI18nStore()
 
 const router = useRouter()
 const adminStore = useAdminStore()
@@ -17,7 +20,7 @@ async function submit() {
     await adminStore.login(username.value, password.value)
     router.push('/admin')
   } catch (err) {
-    error.value = err.response?.data?.message || '登录失败'
+    error.value = err.response?.data?.message || i18n.t('adminLoginFailed')
   } finally {
     loading.value = false
   }
@@ -30,16 +33,16 @@ async function submit() {
       <div class="login-hero">
         <img src="/lcode-image-logo.png" alt="Lcode-image logo" class="login-logo" />
         <div>
-          <p class="login-eyebrow">管理员入口</p>
-          <h1>进入控制台</h1>
-          <p class="muted">在这里配置共享身份令牌、限流规则和自动清理周期。</p>
+          <p class="login-eyebrow">{{ i18n.t('adminEntry') }}</p>
+          <h1>{{ i18n.t('adminLoginTitle') }}</h1>
+          <p class="muted">{{ i18n.t('adminLoginCopy') }}</p>
         </div>
       </div>
-      <input v-model="username" class="input" placeholder="用户名" autocomplete="username" />
-      <input v-model="password" class="input" type="password" placeholder="密码" autocomplete="current-password" />
+      <input v-model="username" class="input" :placeholder="i18n.t('username')" autocomplete="username" />
+      <input v-model="password" class="input" type="password" :placeholder="i18n.t('password')" autocomplete="current-password" />
       <p v-if="error" class="error-text">{{ error }}</p>
       <button class="button-primary" type="button" :disabled="loading" @click="submit">
-        {{ loading ? '登录中...' : '登录后台' }}
+        {{ loading ? i18n.t('adminLoggingIn') : i18n.t('adminLoginButton') }}
       </button>
     </section>
   </div>

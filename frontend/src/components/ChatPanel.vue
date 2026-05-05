@@ -1,6 +1,9 @@
 <script setup>
 import MessageList from './MessageList.vue'
 import PromptInput from './PromptInput.vue'
+import { useI18nStore } from '../stores/i18n'
+
+const i18n = useI18nStore()
 
 const props = defineProps({
   draft: {
@@ -40,22 +43,22 @@ const emit = defineEmits(['update:draft', 'submit', 'delete', 'reuse', 'select-f
   <section class="chat-panel">
     <div class="hero-strip card">
       <div>
-        <p class="hero-eyebrow">公益图片实验室</p>
-        <h1 class="section-title">把一句灵感，变成一张柔和的 AI 图像</h1>
-        <p class="muted section-copy">支持后台共享身份令牌与个人身份令牌双模式，默认 3 天自动清理，适合快速创作、临时预览与轻量分享。</p>
+        <p class="hero-eyebrow">{{ i18n.t('chatEyebrow') }}</p>
+        <h1 class="section-title">{{ i18n.t('chatTitle') }}</h1>
+        <p class="muted section-copy">{{ i18n.t('chatCopy') }}</p>
       </div>
       <div class="hero-meta">
-        <span v-if="isLoggedIn">当前账号：{{ username }}</span>
-        <span v-else>当前以游客身份体验</span>
-        <span>{{ isLoggedIn ? '个人配置优先，共享配置兜底' : '未登录时仅使用共享配置' }}</span>
-        <span>3 天自动清理</span>
-        <span>白天 / 深蓝护眼</span>
+        <span v-if="isLoggedIn">{{ i18n.t('currentAccount', { username }) }}</span>
+        <span v-else>{{ i18n.t('guestMode') }}</span>
+        <span>{{ isLoggedIn ? i18n.t('privateFirst') : i18n.t('sharedOnly') }}</span>
+        <span>{{ i18n.t('autoClean3Days') }}</span>
+        <span>{{ i18n.t('eyeTheme') }}</span>
       </div>
     </div>
 
     <div class="chat-stream card">
       <div v-if="loading" class="status-banner status-loading">
-        正在向上游服务请求图片，请稍等片刻…
+        {{ i18n.t('generatingWait') }}
       </div>
       <div v-if="errorMessage" class="status-banner status-error" role="alert">
         {{ errorMessage }}
@@ -63,8 +66,8 @@ const emit = defineEmits(['update:draft', 'submit', 'delete', 'reuse', 'select-f
 
       <div v-if="!messages.length" class="empty-state">
         <div class="empty-orb" />
-        <h2>欢迎来到 Lcode-image</h2>
-        <p class="muted">输入一句自然语言描述，例如“生成一只在雨后花园里打盹的橘猫”，系统会以聊天方式返回图片结果。</p>
+        <h2>{{ i18n.t('welcome') }}</h2>
+        <p class="muted">{{ i18n.t('welcomeCopy') }}</p>
       </div>
       <MessageList
         v-else

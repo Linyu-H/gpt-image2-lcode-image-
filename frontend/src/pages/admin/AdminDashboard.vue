@@ -1,5 +1,6 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
+import { RouterLink } from 'vue-router'
 import AppLayout from '../../layouts/AppLayout.vue'
 import {
   changeAdminPassword,
@@ -11,9 +12,7 @@ import {
   fetchFeaturedPrompts,
   fetchInviteCodes,
   fetchStatistics,
-  fetchUsers,
   generateInviteCodes,
-  resetUserPassword,
   saveAnnouncement,
   saveCleanupCron,
   saveDailyLimit,
@@ -21,16 +20,14 @@ import {
   saveRegisterPolicy,
   saveUpstreamConfig,
   testUpstreamConfig,
-  updateUserBanStatus,
-  fetchAdminImages,
-  deleteAdminImage,
-  clearAllAdminImages,
 } from '../../api/admin'
 import { useAdminStore } from '../../stores/admin'
 import { useToastStore } from '../../stores/toast'
+import { useI18nStore } from '../../stores/i18n'
 
 const adminStore = useAdminStore()
 const toastStore = useToastStore()
+const i18n = useI18nStore()
 const form = reactive({
   token: '',
   imageApiBaseUrl: '',
@@ -57,11 +54,6 @@ const status = ref(null)
 const statistics = ref(null)
 const featuredPrompts = ref([])
 const inviteCodes = ref([])
-const users = ref([])
-const images = ref([])
-const passwordDrafts = reactive({})
-const resettingUsers = reactive({})
-const banningUsers = reactive({})
 const newFeaturedPrompt = ref('')
 const message = ref('')
 const loading = ref(false)
@@ -91,18 +83,14 @@ async function loadData() {
     return
   }
 
-  const [nextStatistics, nextFeaturedPrompts, nextInviteCodes, nextUsers, nextImages] = await Promise.all([
+  const [nextStatistics, nextFeaturedPrompts, nextInviteCodes] = await Promise.all([
     fetchStatistics(),
     fetchFeaturedPrompts(),
     fetchInviteCodes(),
-    fetchUsers(),
-    fetchAdminImages(),
   ])
   statistics.value = nextStatistics
   featuredPrompts.value = nextFeaturedPrompts
   inviteCodes.value = nextInviteCodes
-  users.value = nextUsers
-  images.value = nextImages
 }
 
 async function saveUpstreamAction() {
@@ -205,45 +193,6 @@ async function generateInviteCodesAction() {
   await loadData()
 }
 
-function canResetPassword(userId) {
-  return (passwordDrafts[userId] || '').trim().length >= 6 && !resettingUsers[userId]
-}
-
-async function resetUserPasswordAction(userId) {
-  const password = (passwordDrafts[userId] || '').trim()
-  if (password.length < 6) {
-    return
-  }
-
-  resettingUsers[userId] = true
-  try {
-    await resetUserPassword(userId, password)
-    passwordDrafts[userId] = ''
-    message.value = '用户密码已重置'
-    toastStore.success('用户密码已重置')
-    await loadData()
-  } finally {
-    resettingUsers[userId] = false
-  }
-}
-
-async function updateUserBanStatusAction(user) {
-  const nextIsBanned = !user.isBanned
-  if (nextIsBanned && !window.confirm(`确认封禁用户「${user.username}」吗？`)) {
-    return
-  }
-
-  banningUsers[user.id] = true
-  try {
-    const result = await updateUserBanStatus(user.id, nextIsBanned)
-    message.value = result.message
-    toastStore.success(result.message)
-    await loadData()
-  } finally {
-    banningUsers[user.id] = false
-  }
-}
-
 async function submitPasswordChange() {
   if (passwordForm.newPassword.length < 6) {
     toastStore.error('新密码至少需要 6 个字符')
@@ -272,24 +221,6 @@ async function submitPasswordChange() {
   }
 }
 
-async function deleteAdminImageAction(image) {
-  if (!window.confirm('确认删除这张图片吗？')) {
-    return
-  }
-  const result = await deleteAdminImage(image.id)
-  toastStore.success(result.message)
-  await loadData()
-}
-
-async function clearAllAdminImagesAction() {
-  if (!window.confirm('确认清空所有生成图片吗？这个操作会同时使关联社区帖子失效，但不会删除首页示例图。')) {
-    return
-  }
-  const result = await clearAllAdminImages()
-  toastStore.success(result.message)
-  await loadData()
-}
-
 function logout() {
   adminStore.logout()
   location.href = '/admin/login'
@@ -310,11 +241,20 @@ onMounted(async () => {
     <div class="admin-shell">
       <section class="card admin-hero">
         <div>
-          <p class="admin-eyebrow">后台控制台</p>
-          <h1 class="section-title">管理上游 API、邮箱、注册策略、站点公告、社区与图片治理</h1>
-          <p class="muted section-copy">这里是 Lcode-image 的运行控制中心。你可以维护生成配置、公告、用户、社区资源和图片清理策略。</p>
+          <p class="admin-eyebrow">{{ i18n.t('adminDashboard') }}</p>
+          <h1 class="section-title">{{ i18n.t('adminHeroTitle') }}</h1>
+          <p class="muted section-copy">{{ i18n.t('adminHeroCopy') }}</p>
         </div>
-        <button class="button-secondary" type="button" @click="logout">退出登录</button>
+        <button class="button-secondary" type="button" @click="logout">{{ i18n.t('adminLogout') }}</button>
+      </section>
+
+      <section v-if="!mustChangePassword" class="admin-management-links">
+        <RouterLink to="/admin/users" class="card admin-management-link">
+          <span>{{ i18n.t('adminUsers') }}</span>
+        </RouterLink>
+        <RouterLink to="/admin/images" class="card admin-management-link">
+          <span>{{ i18n.t('adminImages') }}</span>
+        </RouterLink>
       </section>
 
       <section v-if="mustChangePassword" class="card password-guard">
@@ -487,80 +427,6 @@ onMounted(async () => {
           </li>
         </ul>
       </section>
-
-      <section v-if="!mustChangePassword" class="card admin-card wide-card">
-        <h2>用户管理</h2>
-        <div class="table-wrap">
-          <table class="admin-table">
-            <thead>
-              <tr>
-                <th>用户名</th>
-                <th>邮箱</th>
-                <th>状态</th>
-                <th>重置密码</th>
-                <th>封禁操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="user in users" :key="user.id">
-                <td>{{ user.username }}</td>
-                <td>{{ user.email }}</td>
-                <td>{{ user.isBanned ? '已封禁' : '正常' }}</td>
-                <td>
-                  <div class="inline-actions">
-                    <input v-model="passwordDrafts[user.id]" class="input" type="password" placeholder="新密码，至少 6 位" />
-                    <button class="button-secondary" type="button" :disabled="!canResetPassword(user.id)" @click="resetUserPasswordAction(user.id)">重置</button>
-                  </div>
-                </td>
-                <td>
-                  <button class="button-danger" type="button" :disabled="banningUsers[user.id]" @click="updateUserBanStatusAction(user)">
-                    {{ user.isBanned ? '解除封禁' : '封禁用户' }}
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section v-if="!mustChangePassword" class="card admin-card wide-card">
-        <div class="section-head">
-          <h2>所有图片资源</h2>
-          <button class="button-danger" type="button" @click="clearAllAdminImagesAction">清空生成图片</button>
-        </div>
-        <div class="table-wrap">
-          <table class="admin-table">
-            <thead>
-              <tr>
-                <th>预览</th>
-                <th>用户</th>
-                <th>Prompt</th>
-                <th>来源</th>
-                <th>资源类型</th>
-                <th>创建时间</th>
-                <th>过期时间</th>
-                <th>状态</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="image in images" :key="image.id">
-                <td><img class="admin-thumb" :src="image.imageUrl" :alt="image.prompt" loading="lazy" /></td>
-                <td>{{ image.username || image.userId || '游客' }}</td>
-                <td class="prompt-cell">{{ image.prompt }}</td>
-                <td>{{ image.sourceType }}</td>
-                <td>{{ image.resourceType === 'featured' ? '首页展示' : '生成图片' }}</td>
-                <td>{{ image.createdAt }}</td>
-                <td>{{ image.expiresAt }}</td>
-                <td>{{ image.status }}</td>
-                <td>
-                  <button class="button-danger" type="button" :disabled="image.status !== 'active' || image.resourceType === 'featured'" @click="deleteAdminImageAction(image)">删除</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
     </div>
   </AppLayout>
 </template>
@@ -606,6 +472,28 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.admin-management-links {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.admin-management-link {
+  min-height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 22px;
+  border-radius: 24px;
+  color: var(--color-text-soft);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.admin-management-link:hover {
+  background: var(--color-primary-soft);
 }
 
 .admin-field {
@@ -695,48 +583,12 @@ onMounted(async () => {
   flex-wrap: wrap;
 }
 
-.table-wrap {
-  overflow-x: auto;
-}
-
-.admin-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.admin-table th,
-.admin-table td {
-  padding: 12px 10px;
-  border-bottom: 1px solid rgba(120, 130, 170, 0.16);
-  vertical-align: top;
-  text-align: left;
-}
-
-.inline-actions {
-  display: flex;
-  gap: 10px;
-  min-width: 280px;
-}
-
 .section-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
   margin-bottom: 16px;
-}
-
-.admin-thumb {
-  width: 68px;
-  height: 68px;
-  object-fit: cover;
-  border-radius: 16px;
-  display: block;
-}
-
-.prompt-cell {
-  max-width: 320px;
-  white-space: pre-wrap;
 }
 
 @media (max-width: 1200px) {
@@ -763,13 +615,9 @@ onMounted(async () => {
     align-items: flex-start;
   }
 
-  .statistics-grid {
+  .statistics-grid,
+  .admin-management-links {
     grid-template-columns: 1fr;
-  }
-
-  .inline-actions {
-    min-width: 220px;
-    flex-direction: column;
   }
 }
 </style>

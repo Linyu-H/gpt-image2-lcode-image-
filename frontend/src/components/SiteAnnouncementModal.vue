@@ -15,23 +15,25 @@ const emit = defineEmits(['close', 'dismiss-today'])
 
 <template>
   <Teleport to="body">
-    <div v-if="open" class="announcement-overlay" @click.self="emit('close')">
-      <section class="announcement-modal card" role="dialog" aria-modal="true" aria-labelledby="announcement-title">
-        <div class="announcement-header">
-          <div>
-            <p class="announcement-eyebrow">站点公告</p>
-            <h2 id="announcement-title">{{ announcement.title || '公告' }}</h2>
+    <Transition name="modal-fade">
+      <div v-if="open" class="announcement-overlay" @click.self="emit('close')">
+        <section class="announcement-modal card" role="dialog" aria-modal="true" aria-labelledby="announcement-title">
+          <div class="announcement-header">
+            <div>
+              <p class="announcement-eyebrow">站点公告</p>
+              <h2 id="announcement-title">{{ announcement.title || '公告' }}</h2>
+            </div>
+            <button type="button" class="button-secondary icon-button" aria-label="关闭公告" @click="emit('close')">×</button>
           </div>
-          <button type="button" class="button-secondary icon-button" aria-label="关闭公告" @click="emit('close')">×</button>
-        </div>
-        <p class="announcement-content">{{ announcement.content || '当前暂无公告内容。' }}</p>
-        <p v-if="announcement.updatedAt" class="muted announcement-meta">更新时间：{{ announcement.updatedAt }}</p>
-        <div class="announcement-actions">
-          <button type="button" class="button-secondary" @click="emit('close')">关闭</button>
-          <button type="button" class="button-primary" @click="emit('dismiss-today')">今日不再提示</button>
-        </div>
-      </section>
-    </div>
+          <p class="announcement-content">{{ announcement.content || '当前暂无公告内容。' }}</p>
+          <p v-if="announcement.updatedAt" class="muted announcement-meta">更新时间：{{ announcement.updatedAt }}</p>
+          <div class="announcement-actions">
+            <button type="button" class="button-secondary" @click="emit('close')">关闭</button>
+            <button type="button" class="button-primary" @click="emit('dismiss-today')">今日不再提示</button>
+          </div>
+        </section>
+      </div>
+    </Transition>
   </Teleport>
 </template>
 
@@ -51,6 +53,28 @@ const emit = defineEmits(['close', 'dismiss-today'])
 .announcement-modal {
   width: min(560px, 100%);
   padding: 22px;
+  transform-origin: 50% 46%;
+}
+
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: opacity 0.22s ease;
+}
+
+.modal-fade-enter-active .announcement-modal,
+.modal-fade-leave-active .announcement-modal {
+  transition: opacity 0.24s ease, transform 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+}
+
+.modal-fade-enter-from .announcement-modal,
+.modal-fade-leave-to .announcement-modal {
+  opacity: 0;
+  transform: translateY(14px) scale(0.96);
 }
 
 .announcement-header {

@@ -3,6 +3,9 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as echarts from 'echarts'
 import AppLayout from '../layouts/AppLayout.vue'
 import { fetchFeaturedExample, fetchPublicStatistics } from '../api/image'
+import { useI18nStore } from '../stores/i18n'
+
+const i18n = useI18nStore()
 
 const trendRef = ref(null)
 const sourceRef = ref(null)
@@ -18,15 +21,15 @@ const chartMutedColor = 'var(--color-text-secondary)'
 
 const summaryCards = computed(() => [
   {
-    label: '累计生成',
+    label: i18n.t('totalGenerated'),
     value: statistics.value?.totalImages ?? 0,
   },
   {
-    label: '当前有效',
+    label: i18n.t('activeImages'),
     value: statistics.value?.activeImages ?? 0,
   },
   {
-    label: '今日生成',
+    label: i18n.t('todayGenerated'),
     value: statistics.value?.todayCount ?? 0,
   },
 ])
@@ -46,8 +49,8 @@ const sourceSeries = computed(() => {
   const totals = new Map(rows.map((item) => [item.sourceType, Number(item.total || 0)]))
 
   return [
-    { value: totals.get('shared') || 0, name: '共享令牌', itemStyle: { color: '#6f8cff' } },
-    { value: totals.get('private') || 0, name: '个人令牌', itemStyle: { color: '#7cc8a4' } },
+    { value: totals.get('shared') || 0, name: i18n.t('sharedToken'), itemStyle: { color: '#6f8cff' } },
+    { value: totals.get('private') || 0, name: i18n.t('privateToken'), itemStyle: { color: '#7cc8a4' } },
   ]
 })
 
@@ -56,10 +59,10 @@ const retentionSeries = computed(() => {
   const totals = new Map(rows.map((item) => [item.bucket, Number(item.total || 0)]))
 
   return [
-    { key: 'within_1_day', label: '1 天内', total: totals.get('within_1_day') || 0 },
-    { key: 'within_2_days', label: '2 天内', total: totals.get('within_2_days') || 0 },
-    { key: 'within_3_days', label: '3 天内', total: totals.get('within_3_days') || 0 },
-    { key: 'expired', label: '已过期', total: totals.get('expired') || 0 },
+    { key: 'within_1_day', label: i18n.t('remainingTime', { days: 1, hours: 0, minutes: 0 }), total: totals.get('within_1_day') || 0 },
+    { key: 'within_2_days', label: i18n.t('remainingTime', { days: 2, hours: 0, minutes: 0 }), total: totals.get('within_2_days') || 0 },
+    { key: 'within_3_days', label: i18n.t('remainingTime', { days: 3, hours: 0, minutes: 0 }), total: totals.get('within_3_days') || 0 },
+    { key: 'expired', label: i18n.isEnglish ? 'Expired' : '已过期', total: totals.get('expired') || 0 },
   ]
 })
 
@@ -322,20 +325,19 @@ onBeforeUnmount(() => {
     <div class="landing-shell">
       <section class="card landing-hero">
         <div class="hero-copy">
-          <div class="hero-badge">Lcode-image · 公益 AI 图片生成站</div>
-          <h1>把一句灵感，变成一张柔和、清晰、可立即保存的图片。</h1>
+          <div class="hero-badge">{{ i18n.t('landingBadge') }}</div>
+          <h1>{{ i18n.t('landingTitle') }}</h1>
           <p class="hero-text muted">
-            这是一个面向日常创作的轻量 AI 图片站。你可以直接输入提示词开始生成，也可以登录账号后绑定自己的图片 API 地址和身份令牌；
-            系统会自动保留最近 3 天的图片记录，并由后台统一清理过期文件。
+            {{ i18n.t('landingText') }}
           </p>
           <div class="hero-actions">
-            <RouterLink to="/create" class="button-primary hero-link">开始生成</RouterLink>
-            <RouterLink to="/history" class="button-secondary hero-link">查看历史</RouterLink>
+            <RouterLink to="/create" class="button-primary hero-link">{{ i18n.t('startCreate') }}</RouterLink>
+            <RouterLink to="/history" class="button-secondary hero-link">{{ i18n.t('viewHistory') }}</RouterLink>
           </div>
           <div class="hero-points muted">
-            <span>支持桌面与移动端</span>
-            <span>双模式主题切换</span>
-            <span>个人 / 共享 Token 双通道</span>
+            <span>{{ i18n.t('responsive') }}</span>
+            <span>{{ i18n.t('themeSwitch') }}</span>
+            <span>{{ i18n.t('tokenChannels') }}</span>
           </div>
         </div>
 
@@ -360,14 +362,14 @@ onBeforeUnmount(() => {
                 </template>
               </div>
               <div class="preview-copy">
-                <strong>示例灵感</strong>
+                <strong>{{ i18n.t('featuredPrompt') }}</strong>
                 <p class="muted">{{ featuredExample?.prompt || '' }}</p>
-                <span v-if="featuredExampleDate" class="preview-meta muted">最近更新：{{ featuredExampleDate }}</span>
-                <span v-else class="preview-meta muted">当前还没有生成首页示例图</span>
+                <span v-if="featuredExampleDate" class="preview-meta muted">{{ i18n.t('featuredUpdated', { date: featuredExampleDate }) }}</span>
+                <span v-else class="preview-meta muted">{{ i18n.t('noFeatured') }}</span>
               </div>
             </div>
           </div>
-          <div class="visual-chip card">图片默认仅保留 3 天</div>
+          <div class="visual-chip card">{{ i18n.t('retention3Days') }}</div>
         </div>
       </section>
 
@@ -382,10 +384,10 @@ onBeforeUnmount(() => {
         <section class="card insight-card trend-card chart-card-polished">
           <div class="card-head">
             <div>
-              <p class="info-eyebrow">生成节奏</p>
-              <h2>最近 7 天真实生成趋势</h2>
+              <p class="info-eyebrow">{{ i18n.t('generationTrend') }}</p>
+              <h2>{{ i18n.t('trendTitle') }}</h2>
             </div>
-            <p class="muted card-note">按当天真实落库记录绘制，空白日期会自动补零。</p>
+            <p class="muted card-note">{{ i18n.t('trendNote') }}</p>
           </div>
           <div ref="trendRef" class="chart-box chart-box--trend" />
         </section>
@@ -393,10 +395,10 @@ onBeforeUnmount(() => {
         <section class="card insight-card source-card chart-card-polished">
           <div class="card-head">
             <div>
-              <p class="info-eyebrow">身份来源</p>
-              <h2>共享与个人的实际使用占比</h2>
+              <p class="info-eyebrow">{{ i18n.t('sourceEyebrow') }}</p>
+              <h2>{{ i18n.t('sourceTitle') }}</h2>
             </div>
-            <p class="muted card-note">展示当前所有已生成图片里两类身份来源的真实分布。</p>
+            <p class="muted card-note">{{ i18n.t('sourceNote') }}</p>
           </div>
           <div ref="sourceRef" class="chart-box chart-box--donut" />
         </section>
@@ -405,21 +407,21 @@ onBeforeUnmount(() => {
       <section class="card insight-card cycle-card chart-card-polished">
         <div class="card-head">
           <div>
-            <p class="info-eyebrow">留存状态</p>
-            <h2>近 3 天有效图片与已过期图片分布</h2>
+            <p class="info-eyebrow">{{ i18n.t('cycleEyebrow') }}</p>
+            <h2>{{ i18n.t('cycleTitle') }}</h2>
           </div>
-          <p class="muted card-note">根据 expires_at 实时聚合，能直接看出清理窗口内的存量情况。</p>
+          <p class="muted card-note">{{ i18n.t('cycleNote') }}</p>
         </div>
         <div ref="cycleRef" class="chart-box chart-box--wide" />
       </section>
 
       <section class="card landing-cta">
         <div>
-          <p class="info-eyebrow">现在开始</p>
-          <h2>准备好之后，直接进入生成页就行。</h2>
-          <p class="muted">如果你只是想先体验，可以直接走共享身份令牌；如果你有自己的额度，也可以登录账号后在右上角保存个人配置。</p>
+          <p class="info-eyebrow">{{ i18n.t('ctaEyebrow') }}</p>
+          <h2>{{ i18n.t('ctaTitle') }}</h2>
+          <p class="muted">{{ i18n.t('ctaText') }}</p>
         </div>
-        <RouterLink to="/create" class="button-primary hero-link">进入生成页</RouterLink>
+        <RouterLink to="/create" class="button-primary hero-link">{{ i18n.t('enterCreate') }}</RouterLink>
       </section>
     </div>
   </AppLayout>

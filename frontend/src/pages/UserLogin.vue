@@ -8,6 +8,9 @@ import {
   sendRegisterEmailCode,
 } from '../api/auth'
 import { useUserStore } from '../stores/user'
+import { useI18nStore } from '../stores/i18n'
+
+const i18n = useI18nStore()
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -24,12 +27,12 @@ const registerPolicy = ref({ allowRegister: true, requireInviteCode: false })
 const countdown = ref(0)
 let timer = null
 
-const registerDisabledMessage = computed(() => registerPolicy.value.allowRegister ? '' : '当前暂停新用户注册')
+const registerDisabledMessage = computed(() => registerPolicy.value.allowRegister ? '' : i18n.t('registrationPaused'))
 const showInviteField = computed(() => registerPolicy.value.requireInviteCode)
 const codeButtonText = computed(() => {
-  if (sendingCode.value) return '发送中...'
-  if (countdown.value > 0) return `${countdown.value}s 后重发`
-  return '发送验证码'
+  if (sendingCode.value) return i18n.t('sending')
+  if (countdown.value > 0) return i18n.t('resendAfter', { seconds: countdown.value })
+  return i18n.t('sendCode')
 })
 const isRegisterMode = computed(() => mode.value === 'register')
 const isForgotMode = computed(() => mode.value === 'forgot')
@@ -92,12 +95,12 @@ async function submit() {
         password: password.value,
       })
       switchMode('login')
-      error.value = '密码已重置，请重新登录'
+      error.value = i18n.t('passwordResetDone')
       return
     }
 
     if (!registerPolicy.value.allowRegister) {
-      throw new Error('当前暂停新用户注册')
+      throw new Error(i18n.t('registrationPaused'))
     }
 
     await userStore.register({
@@ -109,7 +112,7 @@ async function submit() {
     })
     router.push('/create')
   } catch (err) {
-    error.value = err?.response?.data?.message || err?.message || '提交失败，请稍后重试'
+    error.value = err?.response?.data?.message || err?.message || i18n.t('submitFailed')
   } finally {
     loading.value = false
   }
@@ -128,7 +131,7 @@ async function sendCode() {
     }
     startCountdown()
   } catch (err) {
-    error.value = err?.response?.data?.message || '验证码发送失败，请稍后重试'
+    error.value = err?.response?.data?.message || i18n.t('codeFailed')
   } finally {
     sendingCode.value = false
   }
@@ -141,41 +144,39 @@ onMounted(loadRegisterPolicy)
   <div class="shell login-shell">
     <section class="card login-card">
       <div class="login-switch">
-        <button type="button" class="switch-chip" :class="{ active: mode === 'login' }" @click="switchMode('login')">登录账号</button>
-        <button type="button" class="switch-chip" :class="{ active: mode === 'register' }" @click="switchMode('register')">注册账号</button>
-        <button type="button" class="switch-chip" :class="{ active: mode === 'forgot' }" @click="switchMode('forgot')">忘记密码</button>
+        <button type="button" class="switch-chip" :class="{ active: mode === 'login' }" @click="switchMode('login')">{{ i18n.t('userLogin') }}</button>
+        <button type="button" class="switch-chip" :class="{ active: mode === 'register' }" @click="switchMode('register')">{{ i18n.t('userRegister') }}</button>
+        <button type="button" class="switch-chip" :class="{ active: mode === 'forgot' }" @click="switchMode('forgot')">{{ i18n.t('forgotPassword') }}</button>
       </div>
 
       <div class="login-hero">
         <img src="/lcode-image-logo.png" alt="Lcode-image logo" class="login-logo" />
         <div>
-          <p class="login-eyebrow">普通用户入口</p>
-          <h1>{{ mode === 'login' ? '登录你的账号' : mode === 'register' ? '创建你的账号' : '找回你的密码' }}</h1>
+          <p class="login-eyebrow">{{ i18n.t('userEntry') }}</p>
+          <h1>{{ mode === 'login' ? i18n.t('loginTitle') : mode === 'register' ? i18n.t('registerTitle') : i18n.t('forgotTitle') }}</h1>
           <p class="muted">
-            {{ mode === 'forgot'
-              ? '输入注册邮箱、邮箱验证码和新密码，即可重置当前账号密码。'
-              : '登录后，你的个人图片 API 地址、身份令牌和历史记录都会绑定到账号，不再依赖浏览器缓存。' }}
+            {{ mode === 'forgot' ? i18n.t('forgotCopy') : i18n.t('loginCopy') }}
           </p>
         </div>
       </div>
 
       <label v-if="!isForgotMode" class="login-field">
-        <span>用户名</span>
-        <input v-model="username" class="input" placeholder="至少 3 个字符" autocomplete="username" />
+        <span>{{ i18n.t('username') }}</span>
+        <input v-model="username" class="input" :placeholder="i18n.t('usernamePlaceholder')" autocomplete="username" />
       </label>
 
       <template v-if="isRegisterMode || isForgotMode">
         <p v-if="isRegisterMode && registerDisabledMessage" class="register-disabled">{{ registerDisabledMessage }}</p>
 
         <label class="login-field">
-          <span>邮箱</span>
-          <input v-model="email" class="input" type="email" placeholder="请输入可接收验证码的邮箱" autocomplete="email" :disabled="isRegisterMode && !registerPolicy.allowRegister" />
+          <span>{{ i18n.t('email') }}</span>
+          <input v-model="email" class="input" type="email" :placeholder="i18n.t('emailPlaceholder')" autocomplete="email" :disabled="isRegisterMode && !registerPolicy.allowRegister" />
         </label>
 
         <label class="login-field">
-          <span>邮箱验证码</span>
+          <span>{{ i18n.t('emailCode') }}</span>
           <div class="code-row">
-            <input v-model="emailCode" class="input" placeholder="请输入 6 位验证码" :disabled="isRegisterMode && !registerPolicy.allowRegister" />
+            <input v-model="emailCode" class="input" :placeholder="i18n.t('emailCodePlaceholder')" :disabled="isRegisterMode && !registerPolicy.allowRegister" />
             <button class="button-secondary code-button" type="button" :disabled="(isRegisterMode && !registerPolicy.allowRegister) || !email.trim() || sendingCode || countdown > 0" @click="sendCode">
               {{ codeButtonText }}
             </button>
@@ -183,20 +184,20 @@ onMounted(loadRegisterPolicy)
         </label>
 
         <label v-if="showInviteField && isRegisterMode" class="login-field">
-          <span>邀请码</span>
-          <input v-model="inviteCode" class="input" placeholder="当前注册必须填写邀请码" :disabled="!registerPolicy.allowRegister" />
+          <span>{{ i18n.t('inviteCode') }}</span>
+          <input v-model="inviteCode" class="input" :placeholder="i18n.t('inviteCodePlaceholder')" :disabled="!registerPolicy.allowRegister" />
         </label>
       </template>
 
       <label class="login-field">
-        <span>{{ isForgotMode ? '新密码' : '密码' }}</span>
-        <input v-model="password" class="input" type="password" placeholder="至少 6 个字符" :autocomplete="mode === 'login' ? 'current-password' : 'new-password'" :disabled="isRegisterMode && !registerPolicy.allowRegister" />
+        <span>{{ isForgotMode ? i18n.t('newPassword') : i18n.t('password') }}</span>
+        <input v-model="password" class="input" type="password" :placeholder="i18n.t('passwordPlaceholder')" :autocomplete="mode === 'login' ? 'current-password' : 'new-password'" :disabled="isRegisterMode && !registerPolicy.allowRegister" />
       </label>
 
       <p v-if="error" class="error-text">{{ error }}</p>
 
       <button class="button-primary" type="button" :disabled="loading || (isRegisterMode && !registerPolicy.allowRegister)" @click="submit">
-        {{ loading ? '提交中...' : mode === 'login' ? '登录并继续' : mode === 'register' ? '注册并继续' : '重置密码' }}
+        {{ loading ? i18n.t('submitLoading') : mode === 'login' ? i18n.t('loginContinue') : mode === 'register' ? i18n.t('registerContinue') : i18n.t('resetPassword') }}
       </button>
     </section>
   </div>

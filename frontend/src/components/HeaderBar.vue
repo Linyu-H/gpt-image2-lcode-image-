@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ThemeToggle from './ThemeToggle.vue'
 import { useUserStore } from '../stores/user'
+import { useI18nStore } from '../stores/i18n'
 
 const props = defineProps({
   onOpenApiKey: {
@@ -22,15 +23,16 @@ const props = defineProps({
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const i18n = useI18nStore()
 const mobileMenuOpen = ref(false)
 
 const navItems = computed(() => [
-  { label: '首页', path: '/' },
-  { label: '开始生成', path: '/create' },
-  { label: '历史记录', path: '/history' },
-  { label: '社区', path: '/community' },
-  { label: '登录账号', path: '/login', hidden: userStore.isLoggedIn },
-  { label: '管理后台', path: '/admin' },
+  { label: i18n.t('navHome'), path: '/' },
+  { label: i18n.t('navCreate'), path: '/create' },
+  { label: i18n.t('navHistory'), path: '/history' },
+  { label: i18n.t('navCommunity'), path: '/community' },
+  { label: i18n.t('navLogin'), path: '/login', hidden: userStore.isLoggedIn },
+  { label: i18n.t('navAdmin'), path: '/admin' },
 ].filter((item) => !item.hidden))
 
 const userLabel = computed(() => userStore.user?.username || '')
@@ -61,7 +63,7 @@ function logoutUser() {
       <img src="/lcode-image-logo.png" alt="Lcode-image logo" class="brand-logo" />
       <div class="brand-copy">
         <strong>Lcode-image</strong>
-        <p class="muted brand-subtitle">柔和、轻盈、开箱即用的公益 AI 图片生成体验</p>
+        <p class="muted brand-subtitle">{{ i18n.t('brandSubtitle') }}</p>
       </div>
     </div>
 
@@ -79,15 +81,16 @@ function logoutUser() {
     </nav>
 
     <div class="header-actions">
-      <button v-if="hasAnnouncement" type="button" class="button-secondary bell-button action-pill" aria-label="查看公告" @click="onOpenAnnouncement?.()">铃铛</button>
+      <button v-if="hasAnnouncement" type="button" class="button-secondary bell-button action-pill" :aria-label="i18n.t('viewAnnouncement')" @click="onOpenAnnouncement?.()">{{ i18n.t('viewAnnouncement') }}</button>
       <button v-if="userStore.isLoggedIn" type="button" class="user-chip" @click="goProfile">
         <img class="user-chip-avatar" :src="userAvatar" alt="用户头像" />
         <span>{{ userLabel }}</span>
       </button>
-      <button v-if="userStore.isLoggedIn" type="button" class="button-secondary action-pill" @click="onOpenApiKey?.()">个人配置</button>
-      <button v-if="userStore.isLoggedIn" type="button" class="button-secondary action-pill" @click="logoutUser">退出账号</button>
+      <button v-if="userStore.isLoggedIn" type="button" class="button-secondary action-pill" @click="onOpenApiKey?.()">{{ i18n.t('personalConfig') }}</button>
+      <button v-if="userStore.isLoggedIn" type="button" class="button-secondary action-pill" @click="logoutUser">{{ i18n.t('logout') }}</button>
+      <button type="button" class="button-secondary action-pill" @click="i18n.toggleLocale">{{ i18n.t('language') }}</button>
       <ThemeToggle />
-      <button type="button" class="button-secondary mobile-menu action-pill" @click="mobileMenuOpen = !mobileMenuOpen">菜单</button>
+      <button type="button" class="button-secondary mobile-menu action-pill" @click="mobileMenuOpen = !mobileMenuOpen">{{ i18n.t('menu') }}</button>
     </div>
 
     <div v-if="mobileMenuOpen" class="mobile-panel card">
@@ -100,10 +103,11 @@ function logoutUser() {
       >
         {{ item.label }}
       </button>
-      <button v-if="hasAnnouncement" type="button" class="mobile-link" @click="onOpenAnnouncement?.(); mobileMenuOpen = false">查看公告</button>
-      <button v-if="userStore.isLoggedIn" type="button" class="mobile-link" @click="goProfile">个人主页</button>
-      <button v-if="userStore.isLoggedIn" type="button" class="mobile-link" @click="onOpenApiKey?.(); mobileMenuOpen = false">个人配置</button>
-      <button v-if="userStore.isLoggedIn" type="button" class="mobile-link" @click="logoutUser">退出账号</button>
+      <button v-if="hasAnnouncement" type="button" class="mobile-link" @click="onOpenAnnouncement?.(); mobileMenuOpen = false">{{ i18n.t('viewAnnouncement') }}</button>
+      <button v-if="userStore.isLoggedIn" type="button" class="mobile-link" @click="goProfile">{{ i18n.t('profile') }}</button>
+      <button v-if="userStore.isLoggedIn" type="button" class="mobile-link" @click="onOpenApiKey?.(); mobileMenuOpen = false">{{ i18n.t('personalConfig') }}</button>
+      <button v-if="userStore.isLoggedIn" type="button" class="mobile-link" @click="logoutUser">{{ i18n.t('logout') }}</button>
+      <button type="button" class="mobile-link" @click="i18n.toggleLocale">{{ i18n.t('language') }}</button>
     </div>
   </header>
 </template>

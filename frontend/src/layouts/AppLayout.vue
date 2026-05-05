@@ -4,7 +4,9 @@ import HeaderBar from '../components/HeaderBar.vue'
 import ApiKeySettingModal from '../components/ApiKeySettingModal.vue'
 import SiteAnnouncementModal from '../components/SiteAnnouncementModal.vue'
 import { fetchAnnouncement } from '../api/image'
+import { useI18nStore } from '../stores/i18n'
 
+const i18n = useI18nStore()
 const apiKeyModalOpen = ref(false)
 const announcementOpen = ref(false)
 const announcement = ref({ title: '', content: '', isEnabled: false, updatedAt: '' })
@@ -71,8 +73,8 @@ onMounted(loadAnnouncement)
         <slot />
       </main>
       <footer class="layout-footer muted">
-        <span>Lcode-image · 公益 AI 图片生成站</span>
-        <span>图片默认仅保留 3 天，超期自动清理</span>
+        <span>{{ i18n.t('footerBrand') }}</span>
+        <span>{{ i18n.t('footerRetention') }}</span>
       </footer>
     </div>
     <ApiKeySettingModal :open="apiKeyModalOpen" @close="closeApiKeyModal" />

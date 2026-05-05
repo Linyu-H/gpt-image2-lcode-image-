@@ -10,7 +10,9 @@ const chatStore = useChatStore()
 const userStore = useUserStore()
 
 onMounted(async () => {
-  chatStore.restoreMessages()
+  if (!chatStore.loading) {
+    chatStore.restoreMessages()
+  }
   await chatStore.loadHistory()
 })
 

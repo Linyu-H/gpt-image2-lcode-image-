@@ -35,7 +35,7 @@ function markRestoredPendingMessage(item) {
     ...item,
     status: 'failed',
     stale: true,
-    errorMessage: '页面刷新前这次生成尚未完成，请到历史记录查看最终结果，或重新发送一次。',
+    errorMessage: '页面离开前这次生成尚未完成，请到历史记录查看最终结果，或重新发送一次。',
   }
 }
 
@@ -75,7 +75,7 @@ export const useChatStore = defineStore('chat', () => {
     const key = createMessagesStorageKey(userStore.user?.id || null)
     try {
       const restored = JSON.parse(localStorage.getItem(key) || '[]')
-      messages.value = restored.map(markRestoredPendingMessage)
+      messages.value = loading.value ? restored : restored.map(markRestoredPendingMessage)
     } catch {
       messages.value = []
     }

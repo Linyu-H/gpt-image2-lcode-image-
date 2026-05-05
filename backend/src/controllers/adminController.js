@@ -10,6 +10,7 @@ import { runExpiredCleanup, startCleanupJob } from '../services/cleanupService.j
 import { getEmailConfig, saveEmailConfig } from '../services/emailConfigService.js'
 import { generateInviteCodes, listInviteCodes } from '../services/inviteCodeService.js'
 import { nowIso } from '../utils/time.js'
+import { normalizePublicImageUrl } from '../services/imageStorageService.js'
 
 export function buildStatisticsPayload() {
   const totalImages = db.prepare(`SELECT COUNT(*) as total FROM generated_images`).get().total
@@ -261,16 +262,22 @@ export function createInviteCodes(req, res) {
 export function getUsers(req, res) {
   const users = db.prepare(`
     SELECT
-      id,
-      username,
-      email,
-      email_verified as emailVerified,
-      is_banned as isBanned,
-      created_at as createdAt,
-      updated_at as updatedAt
+      users.id,
+      users.username,
+      users.email,
+      users.email_verified as emailVerified,
+      users.is_banned as isBanned,
+      users.created_at as createdAt,
+      users.updated_at as updatedAt,
+      user_profiles.avatar_url as avatarUrl,
+      user_profiles.avatar_storage_path as avatarStoragePath
     FROM users
-    ORDER BY created_at DESC
-  `).all()
+    LEFT JOIN user_profiles ON user_profiles.user_id = users.id
+    ORDER BY users.created_at DESC
+  `).all().map((user) => ({
+    ...user,
+    avatarUrl: normalizePublicImageUrl(user.avatarUrl || '', user.avatarStoragePath || ''),
+  }))
 
   res.json(users)
 }

@@ -30,6 +30,7 @@ export const env = {
   image2ApiQuality: process.env.IMAGE2_API_QUALITY || 'hd',
   image2ApiCount: Number(process.env.IMAGE2_API_COUNT || 1),
   image2ApiStyle: process.env.IMAGE2_API_STYLE || '',
+  image2ApiTimeout: Number(process.env.IMAGE2_API_TIMEOUT || 300000),
   uploadMaxFileSize: Number(process.env.UPLOAD_MAX_FILE_SIZE || 10 * 1024 * 1024),
   defaultDailyLimit: Number(process.env.DEFAULT_DAILY_LIMIT || 20),
   defaultCleanupCron: process.env.DEFAULT_CLEANUP_CRON || '0 * * * *',

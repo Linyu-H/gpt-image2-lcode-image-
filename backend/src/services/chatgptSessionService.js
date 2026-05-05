@@ -88,7 +88,7 @@ function buildMultipartPayload({ prompt, inputImage }) {
 async function postGenerateRequest({ prompt, authToken, baseUrl }) {
   return axios.post(joinUrl(baseUrl, env.image2ApiGeneratePath), buildJsonPayload({ prompt }), {
     headers: buildHeaders(authToken),
-    timeout: 120000,
+    timeout: env.image2ApiTimeout,
   })
 }
 
@@ -100,7 +100,7 @@ async function postEditRequest({ prompt, authToken, baseUrl, inputImage }) {
       ...form.getHeaders(),
     },
     maxBodyLength: Infinity,
-    timeout: 120000,
+    timeout: env.image2ApiTimeout,
   })
 }
 

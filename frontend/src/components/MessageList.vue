@@ -23,7 +23,7 @@ const emit = defineEmits(['delete', 'reuse'])
         <template v-if="item.status === 'failed'">
           <div class="message-title">这次生成没有完成</div>
           <div>{{ item.errorMessage || '生成失败，请稍后重试。' }}</div>
-          <div v-if="item.stale" class="message-hint muted">页面刷新前这次请求的结果无法继续跟踪，你可以去历史记录查看是否已生成成功。</div>
+          <div v-if="item.stale" class="message-hint muted">页面离开前这次请求的结果无法继续跟踪，你可以去历史记录查看是否已生成成功。</div>
           <div v-else class="message-hint muted">你可以直接复用左侧历史提示词，或者重新发送一次。</div>
         </template>
         <template v-else>

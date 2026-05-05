@@ -1,4 +1,8 @@
 <script setup>
+import { useI18nStore } from '../stores/i18n'
+
+const i18n = useI18nStore()
+
 const props = defineProps({
   items: {
     type: Array,
@@ -13,10 +17,10 @@ const emit = defineEmits(['select'])
   <aside class="sidebar card">
     <div class="sidebar-header">
       <div>
-        <h3>最近图片</h3>
-        <p class="muted">自动保留 3 天，点一下即可复用原始描述。</p>
+        <h3>{{ i18n.t('recentImages') }}</h3>
+        <p class="muted">{{ i18n.t('recentImagesCopy') }}</p>
       </div>
-      <span class="sidebar-chip">轻量历史</span>
+      <span class="sidebar-chip">{{ i18n.t('lightweightHistory') }}</span>
     </div>
 
     <div class="history-list">
@@ -32,7 +36,7 @@ const emit = defineEmits(['select'])
       </button>
     </div>
 
-    <p v-if="!items.length" class="muted empty-note">还没有生成记录，先试试第一张图片吧。</p>
+    <p v-if="!items.length" class="muted empty-note">{{ i18n.t('emptyRecent') }}</p>
   </aside>
 </template>
 

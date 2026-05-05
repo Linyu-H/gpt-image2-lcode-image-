@@ -7,6 +7,9 @@ import { createCommunityPost } from '../api/image'
 import { useChatStore } from '../stores/chat'
 import { useToastStore } from '../stores/toast'
 import { useUserStore } from '../stores/user'
+import { useI18nStore } from '../stores/i18n'
+
+const i18n = useI18nStore()
 
 const chatStore = useChatStore()
 const userStore = useUserStore()
@@ -15,12 +18,12 @@ const composerOpen = ref(false)
 const selectedImage = ref(null)
 
 const historyCopy = computed(() => userStore.isLoggedIn
-  ? '这里只展示当前账号名下最近 3 天内仍有效的生成图片。你可以复用 Prompt、查看原图、删除记录，或把自己的作品发布到社区。'
-  : '这里只展示当前游客态最近 3 天内仍有效的生成图片。登录账号后，历史记录会按账号独立保存。')
+  ? i18n.t('historyLoggedInCopy')
+  : i18n.t('historyGuestCopy'))
 
 function openComposer(item) {
   if (!userStore.isLoggedIn) {
-    toastStore.error('请先登录账号后再发布到社区')
+    toastStore.error(i18n.t('loginRequiredCommunity'))
     return
   }
   selectedImage.value = item
@@ -32,9 +35,9 @@ async function submitPost(payload) {
     await createCommunityPost(payload)
     composerOpen.value = false
     selectedImage.value = null
-    toastStore.success('已发布到社区')
+    toastStore.success(i18n.t('communityPosted'))
   } catch (error) {
-    toastStore.error(error.response?.data?.message || '发布失败')
+    toastStore.error(error.response?.data?.message || i18n.t('postFailed'))
   }
 }
 
@@ -48,12 +51,12 @@ onMounted(() => {
     <section class="card history-page">
       <div class="history-header">
         <div>
-          <p class="history-eyebrow">最近创作</p>
-          <h1 class="section-title">你的图片历史</h1>
+          <p class="history-eyebrow">{{ i18n.t('historyEyebrow') }}</p>
+          <h1 class="section-title">{{ i18n.t('historyTitle') }}</h1>
           <p class="muted section-copy">{{ historyCopy }}</p>
         </div>
         <div class="history-stat muted">
-          当前有效 {{ chatStore.history.length }} 张
+          {{ i18n.t('currentValidCount', { count: chatStore.history.length }) }}
         </div>
       </div>
 
@@ -70,7 +73,7 @@ onMounted(() => {
       </div>
       <div v-else class="empty-history">
         <div class="empty-history-orb" />
-        <p class="muted">暂无历史记录，先去首页生成你的第一张图片吧。</p>
+        <p class="muted">{{ i18n.t('emptyHistory') }}</p>
       </div>
     </section>
 

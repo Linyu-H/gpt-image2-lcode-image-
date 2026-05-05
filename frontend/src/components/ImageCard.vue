@@ -1,5 +1,8 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useI18nStore } from '../stores/i18n'
+
+const i18n = useI18nStore()
 
 const props = defineProps({
   item: {
@@ -18,12 +21,12 @@ let timer = null
 
 const remainingText = computed(() => {
   const diff = new Date(props.item.expiresAt).getTime() - now.value
-  if (diff <= 0) return '即将过期'
+  if (diff <= 0) return i18n.t('expiresSoon')
   const totalMinutes = Math.floor(diff / 60000)
   const days = Math.floor(totalMinutes / (60 * 24))
   const hours = Math.floor((totalMinutes % (60 * 24)) / 60)
   const minutes = totalMinutes % 60
-  return `剩余 ${days} 天 ${hours} 小时 ${minutes} 分钟`
+  return i18n.t('remainingTime', { days, hours, minutes })
 })
 
 onMounted(() => {
@@ -44,15 +47,15 @@ onBeforeUnmount(() => {
     </div>
     <div class="image-body">
       <div class="image-meta">
-        <span class="source-chip">{{ item.sourceType === 'private' ? '个人身份令牌' : '共享身份令牌' }}</span>
+        <span class="source-chip">{{ item.sourceType === 'private' ? i18n.t('privateToken') : i18n.t('sharedToken') }}</span>
         <span class="muted">{{ remainingText }}</span>
       </div>
       <p class="image-prompt">{{ item.prompt }}</p>
       <div class="image-actions">
-        <button type="button" class="button-secondary" @click="emit('reuse', item.prompt)">复用 Prompt</button>
-        <a class="button-secondary link-button" :href="item.imageUrl" target="_blank" rel="noreferrer">查看原图</a>
-        <button v-if="allowPost" type="button" class="button-secondary" @click="emit('post', item)">发布到社区</button>
-        <button type="button" class="button-danger" @click="emit('delete', item.id)">删除</button>
+        <button type="button" class="button-secondary" @click="emit('reuse', item.prompt)">{{ i18n.t('reusePrompt') }}</button>
+        <a class="button-secondary link-button" :href="item.imageUrl" target="_blank" rel="noreferrer">{{ i18n.t('viewOriginal') }}</a>
+        <button v-if="allowPost" type="button" class="button-secondary" @click="emit('post', item)">{{ i18n.t('postCommunity') }}</button>
+        <button type="button" class="button-danger" @click="emit('delete', item.id)">{{ i18n.t('delete') }}</button>
       </div>
     </div>
   </article>
