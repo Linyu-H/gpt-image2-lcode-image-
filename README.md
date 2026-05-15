@@ -314,6 +314,7 @@ docker compose -p lcode-image up --build -d
 
 说明：
 
+- 容器内后端实际使用 `/app/backend/data.sqlite` 与 `/app/backend/uploads`，因此 compose 中也需要挂载到这两个路径
 - 浏览器访问前端时，前端会通过 Nginx 反向代理把 `/api`、`/uploads`、`/health` 转发到容器内后端
 - 因此公开访问前端时不需要把浏览器请求直接打到 `localhost:3002`
 

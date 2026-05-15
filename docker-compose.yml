@@ -11,8 +11,8 @@ services:
     ports:
       - "3002:3001"
     volumes:
-      - ./backend/data.sqlite:/app/data.sqlite
-      - ./backend/uploads:/app/uploads
+      - ./backend/data.sqlite:/app/backend/data.sqlite
+      - ./backend/uploads:/app/backend/uploads
 
   frontend:
     build:
