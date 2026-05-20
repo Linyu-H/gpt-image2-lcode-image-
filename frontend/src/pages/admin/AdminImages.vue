@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import AppLayout from '../../layouts/AppLayout.vue'
 import { clearAllAdminImages, deleteAdminImage, fetchAdminImages } from '../../api/admin'
@@ -9,10 +9,23 @@ import { useToastStore } from '../../stores/toast'
 const i18n = useI18nStore()
 const toastStore = useToastStore()
 const images = ref([])
+const currentPage = ref(1)
+const pageSize = 20
 const loading = ref(false)
+
+const totalPages = computed(() => Math.max(1, Math.ceil(images.value.length / pageSize)))
+const pagedImages = computed(() => {
+  const start = (currentPage.value - 1) * pageSize
+  return images.value.slice(start, start + pageSize)
+})
+
+function normalizeCurrentPage() {
+  currentPage.value = Math.min(currentPage.value, totalPages.value)
+}
 
 async function loadImages() {
   images.value = await fetchAdminImages()
+  normalizeCurrentPage()
 }
 
 async function deleteAdminImageAction(image) {
@@ -61,6 +74,7 @@ onMounted(async () => {
           <table class="admin-table">
             <thead>
               <tr>
+                <th class="index-col">#</th>
                 <th>{{ i18n.t('imagePreview') }}</th>
                 <th>{{ i18n.t('user') }}</th>
                 <th>{{ i18n.t('prompt') }}</th>
@@ -73,7 +87,8 @@ onMounted(async () => {
               </tr>
             </thead>
             <tbody>
-              <tr v-for="image in images" :key="image.id">
+              <tr v-for="(image, index) in pagedImages" :key="image.id">
+                <td class="index-col">{{ (currentPage - 1) * pageSize + index + 1 }}</td>
                 <td><img class="admin-thumb" :src="image.imageUrl" :alt="image.prompt" loading="lazy" /></td>
                 <td>{{ image.username || image.userId || i18n.t('visitor') }}</td>
                 <td class="prompt-cell">{{ image.prompt }}</td>
@@ -88,6 +103,12 @@ onMounted(async () => {
               </tr>
             </tbody>
           </table>
+
+          <div v-if="totalPages > 1" class="pagination">
+            <button class="button-secondary" type="button" :disabled="currentPage === 1" @click="currentPage -= 1">上一页</button>
+            <span class="pagination-copy">{{ currentPage }} / {{ totalPages }}</span>
+            <button class="button-secondary" type="button" :disabled="currentPage === totalPages" @click="currentPage += 1">下一页</button>
+          </div>
         </div>
       </section>
 
@@ -163,6 +184,27 @@ onMounted(async () => {
   text-align: left;
 }
 
+.index-col {
+  width: 56px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.pagination {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  padding-top: 16px;
+}
+
+.pagination-copy {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  min-width: 56px;
+  text-align: center;
+}
+
 .admin-thumb {
   width: 68px;
   height: 68px;
@@ -229,6 +271,10 @@ onMounted(async () => {
   }
 
   .head-actions {
+    justify-content: flex-start;
+  }
+
+  .pagination {
     justify-content: flex-start;
   }
 }

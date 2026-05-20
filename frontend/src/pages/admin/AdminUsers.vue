@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import AppLayout from '../../layouts/AppLayout.vue'
 import { fetchUsers, resetUserPassword, updateUserBanStatus } from '../../api/admin'
@@ -9,13 +9,26 @@ import { useToastStore } from '../../stores/toast'
 const i18n = useI18nStore()
 const toastStore = useToastStore()
 const users = ref([])
+const currentPage = ref(1)
+const pageSize = 20
 const passwordDrafts = reactive({})
 const resettingUsers = reactive({})
 const banningUsers = reactive({})
 const loading = ref(false)
 
+const totalPages = computed(() => Math.max(1, Math.ceil(users.value.length / pageSize)))
+const pagedUsers = computed(() => {
+  const start = (currentPage.value - 1) * pageSize
+  return users.value.slice(start, start + pageSize)
+})
+
+function normalizeCurrentPage() {
+  currentPage.value = Math.min(currentPage.value, totalPages.value)
+}
+
 async function loadUsers() {
   users.value = await fetchUsers()
+  normalizeCurrentPage()
 }
 
 function canResetPassword(userId) {
@@ -80,6 +93,7 @@ onMounted(async () => {
           <table class="admin-table">
             <thead>
               <tr>
+                <th class="index-col">#</th>
                 <th>{{ i18n.t('avatar') }}</th>
                 <th>{{ i18n.t('username') }}</th>
                 <th>{{ i18n.t('email') }}</th>
@@ -89,7 +103,8 @@ onMounted(async () => {
               </tr>
             </thead>
             <tbody>
-              <tr v-for="user in users" :key="user.id">
+              <tr v-for="(user, index) in pagedUsers" :key="user.id">
+                <td class="index-col">{{ (currentPage - 1) * pageSize + index + 1 }}</td>
                 <td><img class="admin-avatar" :src="user.avatarUrl || '/lcode-image-logo.png'" alt="用户头像" loading="lazy" /></td>
                 <td>{{ user.username }}</td>
                 <td>{{ user.email }}</td>
@@ -108,6 +123,12 @@ onMounted(async () => {
               </tr>
             </tbody>
           </table>
+
+          <div v-if="totalPages > 1" class="pagination">
+            <button class="button-secondary" type="button" :disabled="currentPage === 1" @click="currentPage -= 1">上一页</button>
+            <span class="pagination-copy">{{ currentPage }} / {{ totalPages }}</span>
+            <button class="button-secondary" type="button" :disabled="currentPage === totalPages" @click="currentPage += 1">下一页</button>
+          </div>
         </div>
       </section>
 
@@ -172,6 +193,27 @@ onMounted(async () => {
   border-bottom: 1px solid rgba(120, 130, 170, 0.16);
   vertical-align: top;
   text-align: left;
+}
+
+.index-col {
+  width: 56px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.pagination {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  padding-top: 16px;
+}
+
+.pagination-copy {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  min-width: 56px;
+  text-align: center;
 }
 
 .admin-avatar {
@@ -244,6 +286,10 @@ onMounted(async () => {
   .inline-actions {
     min-width: 220px;
     flex-direction: column;
+  }
+
+  .pagination {
+    justify-content: flex-start;
   }
 }
 </style>

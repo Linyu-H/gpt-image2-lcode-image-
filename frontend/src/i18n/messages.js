@@ -15,7 +15,7 @@ export const messages = {
     profile: '个人主页',
     personalConfig: '个人配置',
     logout: '退出账号',
-    brandSubtitle: '柔和、轻盈、开箱即用的公益 AI 图片生成体验',
+    brandSubtitle: '柔和、轻盈的公益 AI 图片生成体验',
     footerBrand: 'Lcode-image · 公益 AI 图片生成站',
     footerRetention: '图片默认仅保留 3 天，超期自动清理',
     landingBadge: 'Lcode-image · 公益 AI 图片生成站',

@@ -205,7 +205,13 @@ npm install
 
 ### 2. 配置环境变量
 
-编辑 `backend/.env`：
+可以先复制示例文件：
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+然后编辑 `backend/.env`：
 
 ```env
 PORT=3001
@@ -213,6 +219,7 @@ JWT_SECRET=change-this-secret
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=change-me
 ENCRYPTION_SECRET=change-this-encryption-secret-32
+CHATGPT_SESSION_URL=https://chatgpt.com/api/auth/session
 FRONTEND_BASE_URL=http://127.0.0.1:5173
 CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 
@@ -299,6 +306,33 @@ VITE_API_BASE_URL=https://api.your-domain.com/api
 - `frontend/nginx.conf`
 - `backend/Dockerfile`
 - `docker-compose.yml`
+
+部署前先准备后端环境文件：
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+然后修改 `backend/.env` 里的管理员密码、JWT 密钥、加密密钥、上游图片接口和邮箱配置。
+
+如果你修改了前端映射端口或使用域名部署，还需要同步修改 `docker-compose.yml`：
+
+```yaml
+environment:
+  FRONTEND_BASE_URL: http://你的域名或服务器IP:前端端口
+  CORS_ORIGINS: http://你的域名或服务器IP:前端端口
+ports:
+  - "前端端口:80"
+```
+
+例如前端对外端口是 `8080`，`CORS_ORIGINS` 就需要包含 `http://localhost:8080`、`http://服务器IP:8080` 或你的正式域名。否则浏览器访问前端后请求后端 API 时会被 CORS 拦截。多个来源用英文逗号分隔，不要写多余空格。
+
+如果首次启动前本地没有数据库文件和上传目录，可以先创建：
+
+```bash
+touch backend/data.sqlite
+mkdir -p backend/uploads
+```
 
 启动：
 
@@ -478,6 +512,14 @@ It is suitable for private deployment, secondary development, and open-source re
 
 ## Quick Start
 
+Copy the backend environment example first:
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+Install dependencies:
+
 ```bash
 cd backend && npm install
 cd ../frontend && npm install
@@ -491,6 +533,7 @@ JWT_SECRET=change-this-secret
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=change-me
 ENCRYPTION_SECRET=change-this-encryption-secret-32
+CHATGPT_SESSION_URL=https://chatgpt.com/api/auth/session
 FRONTEND_BASE_URL=http://127.0.0.1:5173
 CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 
@@ -542,6 +585,35 @@ The repository includes a minimal Docker setup:
 - `docker-compose.yml`
 
 Build and start with one command:
+
+Before deploying, prepare the backend environment file:
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+Then update the admin password, JWT secret, encryption secret, upstream image API, and email settings in `backend/.env`.
+
+If you change the public frontend port or deploy with a domain name, also update `docker-compose.yml`:
+
+```yaml
+environment:
+  FRONTEND_BASE_URL: http://your-domain-or-server-ip:frontend-port
+  CORS_ORIGINS: http://your-domain-or-server-ip:frontend-port
+ports:
+  - "frontend-port:80"
+```
+
+For example, if the frontend is exposed on port `8080`, `CORS_ORIGINS` must include `http://localhost:8080`, `http://your-server-ip:8080`, or your production domain. Otherwise browser API requests from the frontend may be blocked by CORS. Use commas to separate multiple origins, without extra spaces.
+
+If the local database file and upload directory do not exist before the first start, create them first:
+
+```bash
+touch backend/data.sqlite
+mkdir -p backend/uploads
+```
+
+Start the stack:
 
 ```bash
 docker compose -p lcode-image up --build -d
@@ -643,12 +715,20 @@ MIT
 
 ## クイックスタート
 
+まずバックエンド環境変数のサンプルをコピーします。
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+依存関係をインストールします。
+
 ```bash
 cd backend && npm install
 cd ../frontend && npm install
 ```
 
-`backend/.env` を設定してから起動します。
+`backend/.env` を設定してから起動します。特に管理者パスワード、JWT シークレット、暗号化キー、上流画像 API、メール設定を確認してください。
 
 ```bash
 cd backend
@@ -675,6 +755,35 @@ npm run dev
 - `docker-compose.yml`
 
 1 行でビルドと起動ができます。
+
+デプロイ前にバックエンド環境変数ファイルを用意します。
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+`backend/.env` の管理者パスワード、JWT シークレット、暗号化キー、上流画像 API、メール設定を変更してください。
+
+フロントエンドの公開ポートを変更する場合やドメインで公開する場合は、`docker-compose.yml` も更新してください。
+
+```yaml
+environment:
+  FRONTEND_BASE_URL: http://ドメインまたはサーバーIP:フロントエンドポート
+  CORS_ORIGINS: http://ドメインまたはサーバーIP:フロントエンドポート
+ports:
+  - "フロントエンドポート:80"
+```
+
+例えばフロントエンドの公開ポートが `8080` の場合、`CORS_ORIGINS` には `http://localhost:8080`、`http://サーバーIP:8080`、または本番ドメインを含める必要があります。含まれていないと、ブラウザからの API リクエストが CORS でブロックされることがあります。複数指定する場合はカンマ区切りにし、余分なスペースは入れないでください。
+
+初回起動前にローカルのデータベースファイルとアップロードディレクトリがない場合は、先に作成します。
+
+```bash
+touch backend/data.sqlite
+mkdir -p backend/uploads
+```
+
+起動：
 
 ```bash
 docker compose -p lcode-image up --build -d
