@@ -7,6 +7,11 @@ export default defineConfig({
     proxy: {
       '/api': 'http://127.0.0.1:3001',
       '/uploads': 'http://127.0.0.1:3001',
+      '/wasm': {
+        target: 'https://www.koukoutu.com',
+        changeOrigin: true,
+        secure: true,
+      },
     },
   },
 })

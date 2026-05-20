@@ -4,6 +4,7 @@ import Home from '../pages/Home.vue'
 import History from '../pages/History.vue'
 import Community from '../pages/Community.vue'
 import CommunityPostDetail from '../pages/CommunityPostDetail.vue'
+import Cutout from '../pages/Cutout.vue'
 import Profile from '../pages/Profile.vue'
 import UserLogin from '../pages/UserLogin.vue'
 import AdminLogin from '../pages/admin/AdminLogin.vue'
@@ -21,6 +22,7 @@ const router = createRouter({
     { path: '/history', name: 'history', component: History },
     { path: '/community', name: 'community', component: Community },
     { path: '/community/:id', name: 'community-detail', component: CommunityPostDetail },
+    { path: '/cutout', name: 'cutout', component: Cutout },
     { path: '/profile', name: 'profile', component: Profile },
     { path: '/admin/login', name: 'admin-login', component: AdminLogin },
     { path: '/admin', name: 'admin-dashboard', component: AdminDashboard },

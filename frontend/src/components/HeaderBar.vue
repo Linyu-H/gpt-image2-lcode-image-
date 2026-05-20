@@ -31,6 +31,7 @@ const navItems = computed(() => [
   { label: i18n.t('navCreate'), path: '/create' },
   { label: i18n.t('navHistory'), path: '/history' },
   { label: i18n.t('navCommunity'), path: '/community' },
+  { label: i18n.t('navCutout'), path: '/cutout' },
   { label: i18n.t('navLogin'), path: '/login', hidden: userStore.isLoggedIn },
   { label: i18n.t('navAdmin'), path: '/admin' },
 ].filter((item) => !item.hidden))

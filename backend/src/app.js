@@ -5,6 +5,7 @@ import adminRoutes from './routes/admin.js'
 import authRoutes from './routes/auth.js'
 import communityRoutes from './routes/community.js'
 import imageRoutes from './routes/image.js'
+import cutoutRoutes from './routes/cutout.js'
 import { getStatistics } from './controllers/adminController.js'
 import { getAnnouncement, getFeaturedExample } from './controllers/publicController.js'
 import { errorHandler } from './middleware/errorHandler.js'
@@ -43,6 +44,7 @@ export function createApp() {
   app.use('/api/auth', authRoutes)
   app.use('/api/community', communityRoutes)
   app.use('/api/images', imageRoutes)
+  app.use('/api/cutout', cutoutRoutes)
   app.use(errorHandler)
 
   return app
