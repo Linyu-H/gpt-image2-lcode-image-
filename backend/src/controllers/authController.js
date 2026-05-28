@@ -12,6 +12,7 @@ import { consumeInviteCode } from '../services/inviteCodeService.js'
 import { nowIso, addDays } from '../utils/time.js'
 import { normalizePublicImageUrl, removeStoredImage, saveImageFromUrl, saveUploadedFile } from '../services/imageStorageService.js'
 import { buildAuthUrl, exchangeCodeForToken, fetchLinuxdoUser } from '../utils/linuxdoConnect.js'
+import { getLinuxdoConfig } from '../services/linuxdoConnectService.js'
 
 function createAuthToken(user) {
   return jwt.sign({ userId: user.id, username: user.username, role: 'user' }, env.jwtSecret, { expiresIn: '30d' })
@@ -498,7 +499,9 @@ export function linuxdoAuthorize(req, res) {
 }
 
 export async function linuxdoCallback(req, res) {
-  const frontendBase = env.frontendBaseUrl || ''
+  const { redirectUrl } = getLinuxdoConfig()
+  let frontendBase = env.frontendBaseUrl || ''
+  try { if (redirectUrl) frontendBase = new URL(redirectUrl).origin } catch {}
   const code = String(req.query?.code || '').trim()
   const state = String(req.query?.state || '').trim()
 
