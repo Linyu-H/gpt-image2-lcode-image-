@@ -66,3 +66,8 @@ export async function confirmAvatar(previewId) {
   const { data } = await request.post('/auth/profile/avatar/confirm', { previewId })
   return data
 }
+
+export async function startLinuxdoAuthorize(returnTo) {
+  const { data } = await request.post('/auth/linuxdo/authorize', { returnTo })
+  return data
+}

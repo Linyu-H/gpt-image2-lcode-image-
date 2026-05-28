@@ -133,6 +133,7 @@ onMounted(async () => {
       </section>
 
       <aside class="admin-section-nav card" aria-label="后台导航">
+        <RouterLink to="/admin/config" class="admin-section-link">{{ i18n.t('adminConfig') }}</RouterLink>
         <RouterLink to="/admin/users" class="admin-section-link active">{{ i18n.t('adminUsers') }}</RouterLink>
         <RouterLink to="/admin/images" class="admin-section-link">{{ i18n.t('adminImages') }}</RouterLink>
       </aside>

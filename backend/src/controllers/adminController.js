@@ -9,6 +9,7 @@ import { testImageApi } from '../services/chatgptSessionService.js'
 import { runExpiredCleanup, startCleanupJob } from '../services/cleanupService.js'
 import { getEmailConfig, saveEmailConfig } from '../services/emailConfigService.js'
 import { generateInviteCodes, listInviteCodes } from '../services/inviteCodeService.js'
+import { getLinuxdoConfig, saveLinuxdoConfig } from '../services/linuxdoConnectService.js'
 import { nowIso } from '../utils/time.js'
 import { normalizePublicImageUrl } from '../services/imageStorageService.js'
 
@@ -373,4 +374,22 @@ export function clearAllGeneratedImages(req, res) {
 
 export function getStatistics(req, res) {
   res.json(buildStatisticsPayload())
+}
+
+// 管理员添加linuxdo connect配置
+export function setLinuxdoSetting(req, res) {
+  const clientId = String(req.body?.clientId ?? req.body?.client_id ?? '').trim()
+  const clientSecret = String(req.body?.clientSecret ?? req.body?.client_secret ?? '').trim()
+  const redirectUrl = String(req.body?.redirectUrl ?? req.body?.redirect_url ?? '').trim()
+
+  if (!clientId || !clientSecret || !redirectUrl) {
+    return res.status(400).json({ message: 'Client ID、Client Secret 和回调地址均不能为空' })
+  }
+
+  saveLinuxdoConfig({ clientId, clientSecret, redirectUrl })
+  res.json({ message: 'Linux.do 接入配置已保存' })
+}
+
+export function getLinuxdoSetting(req, res) {
+  res.json(getLinuxdoConfig())
 }

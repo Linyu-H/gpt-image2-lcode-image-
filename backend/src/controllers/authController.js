@@ -1,4 +1,5 @@
 import fs from 'fs'
+import crypto from 'crypto'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { v4 as uuidv4 } from 'uuid'
@@ -10,6 +11,7 @@ import { sendEmailVerificationCode, verifyEmailVerificationCode } from '../servi
 import { consumeInviteCode } from '../services/inviteCodeService.js'
 import { nowIso, addDays } from '../utils/time.js'
 import { normalizePublicImageUrl, removeStoredImage, saveImageFromUrl, saveUploadedFile } from '../services/imageStorageService.js'
+import { buildAuthUrl, exchangeCodeForToken, fetchLinuxdoUser } from '../utils/linuxdoConnect.js'
 
 function createAuthToken(user) {
   return jwt.sign({ userId: user.id, username: user.username, role: 'user' }, env.jwtSecret, { expiresIn: '30d' })
@@ -409,4 +411,122 @@ export function confirmAvatar(req, res) {
     avatarUrl: normalizePublicImageUrl(saved.avatarUrl, saved.avatarStoragePath),
     avatarUpdatedAt: saved.avatarUpdatedAt,
   })
+}
+
+
+// 接入linuxdo
+const linuxdoStateStore = new Map()
+const LINUXDO_STATE_TTL_MS = 10 * 60 * 1000
+
+function issueLinuxdoState(returnTo) {
+  const state = crypto.randomBytes(16).toString('hex')
+  linuxdoStateStore.set(state, { returnTo: returnTo || '/create', createdAt: Date.now() })
+  return state
+}
+
+function consumeLinuxdoState(state) {
+  const record = linuxdoStateStore.get(state)
+  if (!record) return null
+  linuxdoStateStore.delete(state)
+  if (Date.now() - record.createdAt > LINUXDO_STATE_TTL_MS) return null
+  return record
+}
+
+function pickRandomSuffix() {
+  return crypto.randomBytes(3).toString('hex')
+}
+
+function buildUniqueUsername(preferred) {
+  const base = String(preferred || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 20) || `ldo_${pickRandomSuffix()}`
+  let candidate = base
+  for (let i = 0; i < 6; i++) {
+    const existing = db.prepare('SELECT id FROM users WHERE username = ?').get(candidate)
+    if (!existing) return candidate
+    candidate = `${base}_${pickRandomSuffix()}`
+  }
+  return `${base}_${pickRandomSuffix()}`
+}
+
+function upsertLinuxdoUser(profile) {
+  const linuxdoUserId = Number(profile?.id)
+  if (!Number.isFinite(linuxdoUserId) || linuxdoUserId <= 0) {
+    const error = new Error('Linux.do 返回的用户信息缺少 id')
+    error.status = 502
+    throw error
+  }
+
+  const existingByLinuxdo = db.prepare('SELECT * FROM users WHERE linuxdo_user_id = ?').get(linuxdoUserId)
+  if (existingByLinuxdo) return existingByLinuxdo
+
+  const linkEmail = String(profile?.email || '').trim().toLowerCase()
+  if (linkEmail) {
+    const existingByEmail = db.prepare('SELECT * FROM users WHERE email = ?').get(linkEmail)
+    if (existingByEmail) {
+      db.prepare('UPDATE users SET linuxdo_user_id = ?, updated_at = ? WHERE id = ?')
+        .run(linuxdoUserId, nowIso(), existingByEmail.id)
+      return db.prepare('SELECT * FROM users WHERE id = ?').get(existingByEmail.id)
+    }
+  }
+
+  const username = buildUniqueUsername(profile?.username || profile?.name)
+  const email = linkEmail || `linuxdo_${linuxdoUserId}@connect.linux.do`
+  const userId = uuidv4()
+  const timestamp = nowIso()
+  const passwordHash = bcrypt.hashSync(crypto.randomBytes(24).toString('hex'), 10)
+
+  const runCreate = db.transaction(() => {
+    db.prepare(`
+      INSERT INTO users (id, username, email, email_verified, password_hash, linuxdo_user_id, created_at, updated_at)
+      VALUES (?, ?, ?, 1, ?, ?, ?, ?)
+    `).run(userId, username, email, passwordHash, linuxdoUserId, timestamp, timestamp)
+    ensureProfile(userId)
+  })
+  runCreate()
+
+  return db.prepare('SELECT * FROM users WHERE id = ?').get(userId)
+}
+
+export function linuxdoAuthorize(req, res) {
+  try {
+    const returnTo = String(req.query?.returnTo || '/create')
+    const state = issueLinuxdoState(returnTo)
+    const url = buildAuthUrl(state)
+    res.json({ url })
+  } catch (error) {
+    res.status(error.status || 500).json({ message: error.message || '无法生成 Linux.do 授权链接' })
+  }
+}
+
+export async function linuxdoCallback(req, res) {
+  const frontendBase = env.frontendBaseUrl || ''
+  const code = String(req.query?.code || '').trim()
+  const state = String(req.query?.state || '').trim()
+
+  const fail = (message) => {
+    const target = `${frontendBase}/oauth/linuxdo/callback?error=${encodeURIComponent(message)}`
+    res.redirect(target)
+  }
+
+  if (!code || !state) return fail('授权回调参数缺失')
+
+  const record = consumeLinuxdoState(state)
+  if (!record) return fail('授权状态已过期，请重试')
+
+  try {
+    const tokenData = await exchangeCodeForToken(code)
+    const accessToken = tokenData?.access_token
+    if (!accessToken) return fail('未获取到访问令牌')
+
+    const profile = await fetchLinuxdoUser(accessToken)
+    const user = upsertLinuxdoUser(profile)
+
+    if (user.is_banned) return fail('该账号已被封禁')
+
+    const jwtToken = createAuthToken(user)
+    const returnTo = encodeURIComponent(record.returnTo || '/create')
+    res.redirect(`${frontendBase}/oauth/linuxdo/callback?token=${encodeURIComponent(jwtToken)}&returnTo=${returnTo}`)
+  } catch (error) {
+    const message = error?.response?.data?.error_description || error?.message || 'Linux.do 登录失败'
+    return fail(message)
+  }
 }

@@ -4,8 +4,10 @@ import * as echarts from 'echarts'
 import AppLayout from '../layouts/AppLayout.vue'
 import { fetchFeaturedExample, fetchPublicStatistics } from '../api/image'
 import { useI18nStore } from '../stores/i18n'
+import { useThemeStore } from '../stores/theme'
 
 const i18n = useI18nStore()
+const themeStore = useThemeStore()
 
 const trendRef = ref(null)
 const sourceRef = ref(null)
@@ -16,8 +18,28 @@ const cycleChart = ref(null)
 const statistics = ref(null)
 const featuredExample = ref(null)
 const charts = []
-const chartTextColor = 'var(--color-text-soft)'
-const chartMutedColor = 'var(--color-text-secondary)'
+const chartFontFamily = '"Songti SC", "STSong", "Source Han Serif SC", "Noto Serif SC", "SimSun", serif'
+
+function readCssVar(name, fallback = '') {
+  if (typeof window === 'undefined') return fallback
+  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+  return value || fallback
+}
+
+function readChartTokens() {
+  return {
+    text: readCssVar('--chart-text', '#1f2a1f'),
+    muted: readCssVar('--chart-text-muted', '#617261'),
+    axis: readCssVar('--chart-axis', 'rgba(120, 145, 124, 0.32)'),
+    split: readCssVar('--chart-split', 'rgba(120, 145, 124, 0.18)'),
+    tooltipBg: readCssVar('--chart-tooltip-bg', 'rgba(15, 28, 18, 0.94)'),
+    tooltipText: readCssVar('--chart-tooltip-text', '#f7fbf7'),
+    color1: readCssVar('--chart-color-1', '#39a86b'),
+    color2: readCssVar('--chart-color-2', '#6f8cff'),
+    color3: readCssVar('--chart-color-3', '#f08a5d'),
+    cardStrong: readCssVar('--color-card-strong', '#ffffff'),
+  }
+}
 
 const summaryCards = computed(() => [
   {
@@ -47,10 +69,11 @@ const trendSeries = computed(() => {
 const sourceSeries = computed(() => {
   const rows = statistics.value?.sourceSplit || []
   const totals = new Map(rows.map((item) => [item.sourceType, Number(item.total || 0)]))
+  const tokens = readChartTokens()
 
   return [
-    { value: totals.get('shared') || 0, name: i18n.t('sharedToken'), itemStyle: { color: '#6f8cff' } },
-    { value: totals.get('private') || 0, name: i18n.t('privateToken'), itemStyle: { color: '#7cc8a4' } },
+    { value: totals.get('shared') || 0, name: i18n.t('sharedToken'), itemStyle: { color: tokens.color1 } },
+    { value: totals.get('private') || 0, name: i18n.t('privateToken'), itemStyle: { color: tokens.color2 } },
   ]
 })
 
@@ -94,13 +117,16 @@ function createChart(el) {
 }
 
 function buildSharedOption() {
+  const t = readChartTokens()
   return {
     backgroundColor: 'transparent',
+    textStyle: { fontFamily: chartFontFamily, color: t.text },
     tooltip: {
       trigger: 'item',
-      backgroundColor: 'rgba(15, 23, 42, 0.92)',
+      backgroundColor: t.tooltipBg,
       borderWidth: 0,
-      textStyle: { color: '#f8fbff' },
+      padding: [8, 12],
+      textStyle: { color: t.tooltipText, fontFamily: chartFontFamily, fontSize: 13 },
       formatter: '{b}<br/>{c} 张 · {d}%',
     },
     legend: {
@@ -109,7 +135,7 @@ function buildSharedOption() {
       icon: 'circle',
       itemWidth: 10,
       itemHeight: 10,
-      textStyle: { color: chartMutedColor, fontSize: 12 },
+      textStyle: { color: t.text, fontSize: 12, fontFamily: chartFontFamily },
     },
     series: [
       {
@@ -120,24 +146,25 @@ function buildSharedOption() {
         minAngle: 8,
         itemStyle: {
           borderRadius: 18,
-          borderColor: 'rgba(255,255,255,0.9)',
+          borderColor: t.cardStrong,
           borderWidth: 4,
           shadowBlur: 18,
-          shadowColor: 'rgba(79, 109, 201, 0.12)',
+          shadowColor: 'rgba(0, 0, 0, 0.08)',
         },
         label: {
           show: true,
           position: 'outer',
           formatter: '{d}%',
-          color: chartTextColor,
+          color: t.text,
           fontSize: 12,
           fontWeight: 600,
+          fontFamily: chartFontFamily,
         },
-        labelLine: { length: 10, length2: 8, lineStyle: { color: 'rgba(120, 130, 170, 0.4)' } },
+        labelLine: { length: 10, length2: 8, lineStyle: { color: t.axis } },
         emphasis: {
           scale: true,
           scaleSize: 6,
-          label: { color: chartTextColor },
+          label: { color: t.text },
         },
         data: sourceSeries.value,
       },
@@ -146,17 +173,20 @@ function buildSharedOption() {
 }
 
 function buildTrendOption() {
+  const t = readChartTokens()
   return {
     backgroundColor: 'transparent',
+    textStyle: { fontFamily: chartFontFamily, color: t.text },
     grid: { left: 8, right: 8, top: 26, bottom: 14, containLabel: true },
     tooltip: {
       trigger: 'axis',
-      backgroundColor: 'rgba(15, 23, 42, 0.92)',
+      backgroundColor: t.tooltipBg,
       borderWidth: 0,
-      textStyle: { color: '#f8fbff' },
+      padding: [8, 12],
+      textStyle: { color: t.tooltipText, fontFamily: chartFontFamily, fontSize: 13 },
       axisPointer: {
         type: 'line',
-        lineStyle: { color: 'rgba(111, 140, 255, 0.38)', width: 1.5 },
+        lineStyle: { color: t.color2, width: 1.5, opacity: 0.4 },
       },
       formatter: (params) => {
         const point = params?.[0]
@@ -168,9 +198,9 @@ function buildTrendOption() {
       type: 'category',
       boundaryGap: false,
       data: trendSeries.value.map((item) => item.label),
-      axisLine: { lineStyle: { color: 'rgba(120, 130, 170, 0.2)' } },
+      axisLine: { lineStyle: { color: t.axis } },
       axisTick: { show: false },
-      axisLabel: { color: chartMutedColor, margin: 12 },
+      axisLabel: { color: t.text, margin: 12, fontSize: 12, fontFamily: chartFontFamily },
     },
     yAxis: {
       type: 'value',
@@ -178,8 +208,8 @@ function buildTrendOption() {
       splitNumber: 4,
       axisLine: { show: false },
       axisTick: { show: false },
-      splitLine: { lineStyle: { color: 'rgba(120, 130, 170, 0.12)', type: 'dashed' } },
-      axisLabel: { color: chartMutedColor },
+      splitLine: { lineStyle: { color: t.split, type: 'dashed' } },
+      axisLabel: { color: t.text, fontSize: 12, fontFamily: chartFontFamily },
     },
     series: [
       {
@@ -190,29 +220,30 @@ function buildTrendOption() {
         symbolSize: 9,
         lineStyle: {
           width: 4,
-          color: '#6f8cff',
+          color: t.color2,
           shadowBlur: 16,
-          shadowColor: 'rgba(111, 140, 255, 0.22)',
+          shadowColor: t.color2,
+          shadowOpacity: 0.22,
         },
         itemStyle: {
-          color: '#6f8cff',
-          borderColor: '#ffffff',
+          color: t.color2,
+          borderColor: t.cardStrong,
           borderWidth: 2,
         },
         emphasis: {
           focus: 'series',
           scale: true,
           itemStyle: {
-            color: '#7f96ff',
-            borderColor: '#ffffff',
+            color: t.color2,
+            borderColor: t.cardStrong,
             borderWidth: 3,
           },
         },
         areaStyle: {
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: 'rgba(111, 140, 255, 0.30)' },
-            { offset: 0.55, color: 'rgba(111, 140, 255, 0.12)' },
-            { offset: 1, color: 'rgba(111, 140, 255, 0.02)' },
+            { offset: 0, color: t.color2 + '4d' },
+            { offset: 0.55, color: t.color2 + '1f' },
+            { offset: 1, color: t.color2 + '05' },
           ]),
         },
         data: trendSeries.value.map((item) => item.total),
@@ -222,17 +253,20 @@ function buildTrendOption() {
 }
 
 function buildCycleOption() {
+  const t = readChartTokens()
   return {
     backgroundColor: 'transparent',
+    textStyle: { fontFamily: chartFontFamily, color: t.text },
     grid: { left: 12, right: 14, top: 18, bottom: 8, containLabel: true },
     tooltip: {
       trigger: 'axis',
-      backgroundColor: 'rgba(15, 23, 42, 0.92)',
+      backgroundColor: t.tooltipBg,
       borderWidth: 0,
-      textStyle: { color: '#f8fbff' },
+      padding: [8, 12],
+      textStyle: { color: t.tooltipText, fontFamily: chartFontFamily, fontSize: 13 },
       axisPointer: {
         type: 'shadow',
-        shadowStyle: { color: 'rgba(111, 140, 255, 0.08)' },
+        shadowStyle: { color: t.color1 + '14' },
       },
     },
     xAxis: {
@@ -240,13 +274,13 @@ function buildCycleOption() {
       minInterval: 1,
       axisLine: { show: false },
       axisTick: { show: false },
-      axisLabel: { color: chartMutedColor },
-      splitLine: { lineStyle: { color: 'rgba(120, 130, 170, 0.12)', type: 'dashed' } },
+      axisLabel: { color: t.text, fontSize: 12, fontFamily: chartFontFamily },
+      splitLine: { lineStyle: { color: t.split, type: 'dashed' } },
     },
     yAxis: {
       type: 'category',
       data: retentionSeries.value.map((item) => item.label),
-      axisLabel: { color: chartMutedColor, margin: 14 },
+      axisLabel: { color: t.text, margin: 14, fontSize: 12, fontFamily: chartFontFamily },
       axisLine: { show: false },
       axisTick: { show: false },
     },
@@ -256,21 +290,21 @@ function buildCycleOption() {
         barWidth: 14,
         showBackground: true,
         backgroundStyle: {
-          color: 'rgba(124, 200, 164, 0.08)',
+          color: t.split,
           borderRadius: 999,
         },
         itemStyle: {
           borderRadius: [0, 999, 999, 0],
           color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
-            { offset: 0, color: '#7cc8a4' },
-            { offset: 1, color: '#9be5c5' },
+            { offset: 0, color: t.color1 },
+            { offset: 1, color: t.color2 },
           ]),
         },
         emphasis: {
           itemStyle: {
             color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
-              { offset: 0, color: '#73c59e' },
-              { offset: 1, color: '#b0f0d0' },
+              { offset: 0, color: t.color1 },
+              { offset: 1, color: t.color3 },
             ]),
           },
         },
@@ -303,6 +337,10 @@ async function loadFeaturedExample() {
 }
 
 watch([trendSeries, sourceSeries, retentionSeries], syncCharts)
+watch(() => themeStore.theme, () => {
+  // give CSS vars one frame to update on the documentElement before reading
+  requestAnimationFrame(syncCharts)
+})
 
 onMounted(async () => {
   trendChart.value = createChart(trendRef.value)

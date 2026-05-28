@@ -11,6 +11,7 @@ import {
   getConfigStatus,
   getFeaturedPrompts,
   getInviteCodes,
+  getLinuxdoSetting,
   getStatistics,
   getUsers,
   login,
@@ -22,6 +23,7 @@ import {
   saveEmailServiceConfig,
   saveRegisterPolicy,
   saveUpstreamConfig,
+  setLinuxdoSetting,
   testUpstreamConfig,
   testUserKey,
   updateUserBanStatus,
@@ -55,5 +57,7 @@ router.get('/images', requireAdmin, getAdminImages)
 router.delete('/images/:id', requireAdmin, deleteAdminImage)
 router.post('/images/clear', requireAdmin, clearAllGeneratedImages)
 router.get('/statistics', requireAdmin, getStatistics)
+router.get('/linuxdo-connect', requireAdmin, getLinuxdoSetting)
+router.post('/linuxdo-connect', requireAdmin, setLinuxdoSetting)
 
 export default router

@@ -5,6 +5,7 @@ import AppLayout from '../layouts/AppLayout.vue'
 import { deleteCommunityPost, fetchCommunityPostDetail } from '../api/image'
 import { useToastStore } from '../stores/toast'
 import { useUserStore } from '../stores/user'
+import { formatDateTime } from '../utils/datetime'
 
 const route = useRoute()
 const router = useRouter()
@@ -71,8 +72,8 @@ onMounted(loadPost)
           <img class="detail-avatar" :src="post.avatarUrl || '/lcode-image-logo.png'" alt="用户头像" />
           <div>
             <strong>{{ post.username }}</strong>
-            <p class="muted">发布于 {{ post.createdAt }}</p>
-            <p class="muted">到期时间：{{ post.expiresAt }}</p>
+            <p class="muted">发布于 {{ formatDateTime(post.createdAt) }}</p>
+            <p class="muted">到期时间：{{ formatDateTime(post.expiresAt) }}</p>
           </div>
         </div>
 

@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS users (
   email_verified INTEGER NOT NULL DEFAULT 1,
   password_hash TEXT NOT NULL,
   is_banned INTEGER NOT NULL DEFAULT 0,
+  linuxdo_user_id INTEGER,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
@@ -130,4 +131,11 @@ CREATE TABLE IF NOT EXISTS invite_codes (
   used_by_user_id TEXT DEFAULT NULL,
   used_by_email TEXT DEFAULT NULL,
   FOREIGN KEY (used_by_user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- linuxdo connect
+CREATE TABLE IF NOT EXISTS linuxdo_connect (
+  client_id TEXT PRIMARY KEY,
+  client_secret TEXT NOT NULL,
+  redirect_url TEXT NOT NULL
 );

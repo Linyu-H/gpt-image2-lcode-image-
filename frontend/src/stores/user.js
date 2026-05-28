@@ -40,6 +40,14 @@ export const useUserStore = defineStore('user', () => {
     await loadProfile()
   }
 
+  async function loginWithToken(externalToken) {
+    if (!externalToken) throw new Error('缺少登录令牌')
+    token.value = externalToken
+    localStorage.setItem(userTokenStorageKey, externalToken)
+    await loadMe()
+    await loadProfile()
+  }
+
   async function loadMe() {
     if (!token.value) {
       user.value = null
@@ -122,6 +130,7 @@ export const useUserStore = defineStore('user', () => {
     isLoggedIn,
     login,
     register,
+    loginWithToken,
     loadMe,
     loadProfile,
     bootstrap,

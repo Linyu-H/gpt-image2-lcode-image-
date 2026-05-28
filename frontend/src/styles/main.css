@@ -9,7 +9,8 @@ body,
 #app {
   margin: 0;
   min-height: 100%;
-  font-family: 'Songti SC', 'STSong', 'SimSun', 'Source Serif 4', 'Source Han Serif SC', 'Noto Serif SC', serif;
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
   background: var(--color-bg);
   color: var(--color-text);
 }
@@ -23,6 +24,7 @@ body {
   background: var(--color-bg-accent);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 a {
@@ -39,10 +41,60 @@ input,
 textarea,
 select {
   font: inherit;
+  color: inherit;
 }
 
 button {
   cursor: pointer;
+}
+
+::selection {
+  background: var(--color-primary-soft);
+  color: var(--color-text);
+}
+
+::placeholder {
+  color: var(--color-placeholder);
+  opacity: 1;
+}
+
+/* WebKit autofill -- avoid yellow background carrying over from system */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--color-text);
+  -webkit-box-shadow: 0 0 0 1000px var(--color-card-strong) inset;
+  caret-color: var(--color-text);
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Custom scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-text-soft);
+  background-clip: padding-box;
+  border: 2px solid transparent;
 }
 
 .shell {
@@ -59,25 +111,39 @@ button {
 .card {
   background: var(--color-card);
   border: 1px solid var(--color-border);
-  border-radius: 24px;
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-card);
   backdrop-filter: var(--backdrop-blur);
 }
 
 .button-primary,
 .button-secondary,
-.button-danger {
+.button-danger,
+.button-ghost {
   min-height: 44px;
   padding: 0 18px;
-  border-radius: 14px;
+  border-radius: var(--radius-sm);
   border: 1px solid transparent;
-  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: background-color var(--transition-base),
+              border-color var(--transition-base),
+              transform var(--transition-base),
+              box-shadow var(--transition-base);
 }
 
-.button-primary:hover,
-.button-secondary:hover,
-.button-danger:hover {
+.button-primary:hover:not(:disabled),
+.button-secondary:hover:not(:disabled),
+.button-danger:hover:not(:disabled),
+.button-ghost:hover:not(:disabled) {
   transform: translateY(-1px);
+}
+
+.button-primary:active:not(:disabled),
+.button-secondary:active:not(:disabled),
+.button-danger:active:not(:disabled),
+.button-ghost:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .button-primary {
@@ -90,14 +156,15 @@ button {
   box-shadow: 0 12px 24px rgba(118, 168, 255, 0.18);
 }
 
-.button-primary:hover {
+.button-primary:hover:not(:disabled) {
   background: var(--color-primary-hover);
 }
 
 .button-primary:disabled,
 .button-secondary:disabled,
-.button-danger:disabled {
-  opacity: 0.6;
+.button-danger:disabled,
+.button-ghost:disabled {
+  opacity: 0.55;
   cursor: not-allowed;
   transform: none;
 }
@@ -108,28 +175,76 @@ button {
   border-color: var(--color-border);
 }
 
+.button-secondary:hover:not(:disabled) {
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary-soft);
+}
+
 .button-danger {
-  background: rgba(213, 91, 91, 0.12);
+  background: var(--color-danger-soft);
   color: var(--color-danger);
-  border-color: rgba(213, 91, 91, 0.2);
+  border-color: var(--color-danger-soft);
+}
+
+.button-danger:hover:not(:disabled) {
+  background: var(--color-danger);
+  color: #fff;
+  border-color: var(--color-danger);
+}
+
+.button-ghost {
+  background: transparent;
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
+}
+
+.button-ghost:hover:not(:disabled) {
+  background: var(--color-card-muted);
+  color: var(--color-text);
+}
+
+.button-sm {
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-xs);
 }
 
 .input,
-.textarea {
+.textarea,
+.select {
   width: 100%;
   border: 1px solid var(--color-border);
   background: var(--color-card-strong);
   color: var(--color-text);
-  border-radius: 18px;
-  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
   outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  font-size: var(--text-base);
+  transition: border-color var(--transition-base),
+              box-shadow var(--transition-base),
+              background-color var(--transition-base);
+}
+
+.input:hover:not(:focus):not(:disabled),
+.textarea:hover:not(:focus):not(:disabled),
+.select:hover:not(:focus):not(:disabled) {
+  border-color: var(--color-border-strong);
 }
 
 .input:focus,
-.textarea:focus {
+.textarea:focus,
+.select:focus {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 4px var(--color-primary-soft);
+}
+
+.input:disabled,
+.textarea:disabled,
+.select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--color-card-muted);
 }
 
 .textarea {
@@ -146,11 +261,50 @@ button {
   margin: 0;
   font-size: clamp(1.25rem, 2vw, 1.75rem);
   line-height: 1.2;
+  letter-spacing: -0.01em;
 }
 
 .section-copy {
   margin: 6px 0 0;
   line-height: 1.7;
+}
+
+/* Reusable badge */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 10px;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  border-radius: var(--radius-pill);
+  background: var(--color-card-muted);
+  color: var(--color-text-secondary);
+}
+
+.badge-success {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+
+.badge-danger {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.badge-warning {
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
 
 @media (max-width: 1024px) {
@@ -168,6 +322,6 @@ button {
   }
 
   .card {
-    border-radius: 20px;
+    border-radius: var(--radius-lg);
   }
 }

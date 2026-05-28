@@ -7,8 +7,10 @@ import CommunityPostDetail from '../pages/CommunityPostDetail.vue'
 import Cutout from '../pages/Cutout.vue'
 import Profile from '../pages/Profile.vue'
 import UserLogin from '../pages/UserLogin.vue'
+import LinuxdoCallback from '../pages/LinuxdoCallback.vue'
 import AdminLogin from '../pages/admin/AdminLogin.vue'
 import AdminDashboard from '../pages/admin/AdminDashboard.vue'
+import AdminConfig from '../pages/admin/AdminConfig.vue'
 import AdminUsers from '../pages/admin/AdminUsers.vue'
 import AdminImages from '../pages/admin/AdminImages.vue'
 import { adminTokenStorageKey, userTokenStorageKey } from '../api/request'
@@ -18,6 +20,7 @@ const router = createRouter({
   routes: [
     { path: '/', name: 'landing', component: Landing },
     { path: '/login', name: 'user-login', component: UserLogin },
+    { path: '/oauth/linuxdo/callback', name: 'linuxdo-callback', component: LinuxdoCallback },
     { path: '/create', name: 'home', component: Home },
     { path: '/history', name: 'history', component: History },
     { path: '/community', name: 'community', component: Community },
@@ -26,6 +29,7 @@ const router = createRouter({
     { path: '/profile', name: 'profile', component: Profile },
     { path: '/admin/login', name: 'admin-login', component: AdminLogin },
     { path: '/admin', name: 'admin-dashboard', component: AdminDashboard },
+    { path: '/admin/config', name: 'admin-config', component: AdminConfig },
     { path: '/admin/users', name: 'admin-users', component: AdminUsers },
     { path: '/admin/images', name: 'admin-images', component: AdminImages },
   ],
@@ -35,7 +39,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to) => {
-  if (['admin-dashboard', 'admin-users', 'admin-images'].includes(to.name)) {
+  if (['admin-dashboard', 'admin-config', 'admin-users', 'admin-images'].includes(to.name)) {
     const token = localStorage.getItem(adminTokenStorageKey)
     if (!token) {
       return '/admin/login'

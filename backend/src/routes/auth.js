@@ -8,6 +8,8 @@ import {
   getMe,
   getProfile,
   getRegisterPolicy,
+  linuxdoAuthorize,
+  linuxdoCallback,
   login,
   register,
   resetPasswordWithEmailCode,
@@ -42,6 +44,8 @@ router.post('/password-reset/email-code/send', sendPasswordResetEmailCode)
 router.post('/password-reset/confirm', resetPasswordWithEmailCode)
 router.post('/register', register)
 router.post('/login', login)
+router.post('/linuxdo/authorize', linuxdoAuthorize)
+router.get('/linuxdo/callback', linuxdoCallback)
 router.get('/me', requireUser, getMe)
 router.get('/profile', requireUser, getProfile)
 router.post('/profile', requireUser, saveProfile)

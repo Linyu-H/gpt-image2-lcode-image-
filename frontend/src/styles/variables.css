@@ -1,39 +1,126 @@
 :root {
+  /* === Brand === */
   --color-primary: #39a86b;
   --color-primary-hover: #2f915b;
   --color-primary-soft: rgba(57, 168, 107, 0.14);
+
+  /* === Surface === */
   --color-bg: #f4f8f4;
   --color-bg-accent: radial-gradient(circle at top left, rgba(111, 193, 139, 0.18), transparent 30%), linear-gradient(180deg, #f8fbf8 0%, #eef5ef 100%);
   --color-card: rgba(255, 255, 255, 0.88);
   --color-card-strong: #ffffff;
   --color-card-muted: #eef5ef;
+  --color-overlay: rgba(15, 28, 18, 0.42);
+
+  /* === Border === */
   --color-border: rgba(157, 181, 161, 0.42);
+  --color-border-strong: rgba(120, 145, 124, 0.32);
+  --color-divider: rgba(157, 181, 161, 0.22);
+
+  /* === Text === */
   --color-text: #1f2a1f;
   --color-text-secondary: #617261;
   --color-text-soft: #7f8c7f;
+  --color-placeholder: #98a89a;
+
+  /* === Status === */
   --color-danger: #d55b5b;
+  --color-danger-soft: rgba(213, 91, 91, 0.14);
   --color-success: #2f915b;
+  --color-success-soft: rgba(47, 145, 91, 0.14);
+  --color-warning: #d99a3b;
+  --color-warning-soft: rgba(217, 154, 59, 0.16);
+
+  /* === Charts (echarts uses real colors, not CSS vars) === */
+  --chart-text: #1f2a1f;
+  --chart-text-muted: #617261;
+  --chart-axis: rgba(120, 145, 124, 0.32);
+  --chart-split: rgba(120, 145, 124, 0.18);
+  --chart-tooltip-bg: rgba(15, 28, 18, 0.94);
+  --chart-tooltip-text: #f7fbf7;
+  --chart-color-1: #39a86b;
+  --chart-color-2: #6f8cff;
+  --chart-color-3: #f08a5d;
+
+  /* === Effects === */
   --shadow-card: 0 18px 50px rgba(34, 72, 41, 0.08);
   --shadow-soft: 0 8px 24px rgba(34, 72, 41, 0.05);
+  --shadow-popover: 0 20px 60px rgba(15, 28, 18, 0.18);
   --backdrop-blur: blur(16px);
+
+  /* === Radius === */
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+
+  /* === Spacing === */
+  --space-xs: 6px;
+  --space-sm: 10px;
+  --space-md: 16px;
+  --space-lg: 22px;
+  --space-xl: 28px;
+
+  /* === Type === */
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 15px;
+  --text-md: 16px;
+  --text-lg: 18px;
+  --text-xl: 22px;
+
+  /* === Motion === */
+  --transition-fast: 150ms ease;
+  --transition-base: 220ms ease;
+
+  /* === Font === */
+  --font-serif: 'Songti SC', 'STSong', 'Source Han Serif SC', 'Noto Serif SC', 'SimSun', 'Source Serif 4', serif;
+  --font-sans: var(--font-serif);
+  --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
 }
 
 [data-theme='eye'] {
   --color-primary: #76a8ff;
   --color-primary-hover: #90b8ff;
   --color-primary-soft: rgba(118, 168, 255, 0.16);
+
   --color-bg: #0e1726;
   --color-bg-accent: radial-gradient(circle at top left, rgba(76, 123, 204, 0.28), transparent 28%), linear-gradient(180deg, #0f1728 0%, #0a1120 100%);
   --color-card: rgba(18, 28, 46, 0.82);
   --color-card-strong: #121c2e;
   --color-card-muted: #17233a;
+  --color-overlay: rgba(2, 6, 18, 0.62);
+
   --color-border: rgba(122, 145, 191, 0.24);
+  --color-border-strong: rgba(150, 170, 210, 0.34);
+  --color-divider: rgba(122, 145, 191, 0.16);
+
   --color-text: #f4f7ff;
   --color-text-secondary: #cfe0ff;
-  --color-text-soft: #eaf2ff;
+  --color-text-soft: #b5c5e6;
+  --color-placeholder: #6b7d9a;
+
   --color-danger: #ff8f95;
-  --color-success: #8fc2ff;
+  --color-danger-soft: rgba(255, 143, 149, 0.18);
+  --color-success: #8fd2bf;
+  --color-success-soft: rgba(143, 210, 191, 0.18);
+  --color-warning: #ffc88a;
+  --color-warning-soft: rgba(255, 200, 138, 0.18);
+
+  --chart-text: #f4f7ff;
+  --chart-text-muted: #b5c5e6;
+  --chart-axis: rgba(150, 170, 210, 0.36);
+  --chart-split: rgba(150, 170, 210, 0.16);
+  --chart-tooltip-bg: rgba(8, 14, 28, 0.94);
+  --chart-tooltip-text: #f4f7ff;
+  --chart-color-1: #76a8ff;
+  --chart-color-2: #7cc8a4;
+  --chart-color-3: #ffb27a;
+
   --shadow-card: 0 20px 60px rgba(2, 6, 23, 0.36);
   --shadow-soft: 0 10px 30px rgba(2, 6, 23, 0.28);
+  --shadow-popover: 0 22px 70px rgba(2, 6, 18, 0.6);
   --backdrop-blur: blur(20px);
 }

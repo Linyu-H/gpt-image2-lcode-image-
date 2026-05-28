@@ -6,6 +6,7 @@ import {
   resetPasswordWithEmailCode,
   sendPasswordResetEmailCode,
   sendRegisterEmailCode,
+  startLinuxdoAuthorize,
 } from '../api/auth'
 import { useUserStore } from '../stores/user'
 import { useI18nStore } from '../stores/i18n'
@@ -25,6 +26,7 @@ const loading = ref(false)
 const sendingCode = ref(false)
 const registerPolicy = ref({ allowRegister: true, requireInviteCode: false })
 const countdown = ref(0)
+const linuxdoLoading = ref(false)
 let timer = null
 
 const registerDisabledMessage = computed(() => registerPolicy.value.allowRegister ? '' : i18n.t('registrationPaused'))
@@ -138,6 +140,20 @@ async function sendCode() {
 }
 
 onMounted(loadRegisterPolicy)
+
+async function linuxdoLogin() {
+  if (linuxdoLoading.value) return
+  linuxdoLoading.value = true
+  error.value = ''
+  try {
+    const { url } = await startLinuxdoAuthorize('/create')
+    if (!url) throw new Error('未获取到 Linux.do 授权地址')
+    window.location.href = url
+  } catch (err) {
+    error.value = err?.response?.data?.message || err?.message || '无法跳转 Linux.do 授权'
+    linuxdoLoading.value = false
+  }
+}
 </script>
 
 <template>
@@ -198,6 +214,19 @@ onMounted(loadRegisterPolicy)
 
       <button class="button-primary" type="button" :disabled="loading || (isRegisterMode && !registerPolicy.allowRegister)" @click="submit">
         {{ loading ? i18n.t('submitLoading') : mode === 'login' ? i18n.t('loginContinue') : mode === 'register' ? i18n.t('registerContinue') : i18n.t('resetPassword') }}
+      </button>
+
+      <div v-if="!isForgotMode" class="oauth-divider"><span>或</span></div>
+
+      <button
+        v-if="!isForgotMode"
+        class="linuxdo-button"
+        type="button"
+        :disabled="linuxdoLoading"
+        @click="linuxdoLogin"
+      >
+        <img src="https://wiki.linux.do/_next/image?url=%2Ffavicon.ico&w=32&q=75" alt="Linux.do" class="linuxdo-icon" />
+        <span>{{ linuxdoLoading ? '正在跳转 Linux.do…' : '使用 Linux.do 登录' }}</span>
       </button>
     </section>
   </div>
@@ -297,6 +326,54 @@ onMounted(loadRegisterPolicy)
 .error-text {
   margin: 0;
   color: var(--color-danger);
+}
+
+.oauth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  margin: 4px 0;
+}
+
+.oauth-divider::before,
+.oauth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-border, rgba(120, 130, 170, 0.2));
+}
+
+.linuxdo-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border, rgba(120, 130, 170, 0.24));
+  background: var(--color-card-muted);
+  color: var(--color-text);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.linuxdo-button:hover:not(:disabled) {
+  background: var(--color-primary-soft);
+}
+
+.linuxdo-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.linuxdo-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
 }
 
 @media (max-width: 768px) {

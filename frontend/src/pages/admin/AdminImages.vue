@@ -5,6 +5,7 @@ import AppLayout from '../../layouts/AppLayout.vue'
 import { clearAllAdminImages, deleteAdminImage, fetchAdminImages } from '../../api/admin'
 import { useI18nStore } from '../../stores/i18n'
 import { useToastStore } from '../../stores/toast'
+import { formatDateTime } from '../../utils/datetime'
 
 const i18n = useI18nStore()
 const toastStore = useToastStore()
@@ -94,8 +95,8 @@ onMounted(async () => {
                 <td class="prompt-cell">{{ image.prompt }}</td>
                 <td>{{ image.sourceType }}</td>
                 <td>{{ image.resourceType === 'featured' ? i18n.t('featuredExampleResource') : i18n.t('generatedImageResource') }}</td>
-                <td>{{ image.createdAt }}</td>
-                <td>{{ image.expiresAt }}</td>
+                <td>{{ formatDateTime(image.createdAt) }}</td>
+                <td>{{ formatDateTime(image.expiresAt) }}</td>
                 <td>{{ image.status }}</td>
                 <td>
                   <button class="button-danger" type="button" :disabled="image.status !== 'active' || image.resourceType === 'featured'" @click="deleteAdminImageAction(image)">{{ i18n.t('delete') }}</button>
@@ -113,6 +114,7 @@ onMounted(async () => {
       </section>
 
       <aside class="admin-section-nav card" aria-label="后台导航">
+        <RouterLink to="/admin/config" class="admin-section-link">{{ i18n.t('adminConfig') }}</RouterLink>
         <RouterLink to="/admin/users" class="admin-section-link">{{ i18n.t('adminUsers') }}</RouterLink>
         <RouterLink to="/admin/images" class="admin-section-link active">{{ i18n.t('adminImages') }}</RouterLink>
       </aside>

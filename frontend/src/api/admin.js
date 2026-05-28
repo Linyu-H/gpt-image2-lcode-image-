@@ -124,3 +124,13 @@ export async function cleanExpiredImages() {
   const { data } = await request.post('/admin/clean/expired')
   return data
 }
+
+export async function fetchLinuxdoSetting() {
+  const { data } = await request.get('/admin/linuxdo-connect')
+  return data
+}
+
+export async function saveLinuxdoSetting(payload) {
+  const { data } = await request.post('/admin/linuxdo-connect', payload)
+  return data
+}

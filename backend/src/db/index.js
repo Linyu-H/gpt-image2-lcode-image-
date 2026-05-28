@@ -87,6 +87,10 @@ if (!userColumns.includes('created_at')) {
 if (!userColumns.includes('updated_at')) {
   db.prepare('ALTER TABLE users ADD COLUMN updated_at TEXT NOT NULL DEFAULT ""').run()
 }
+if (!userColumns.includes('linuxdo_user_id')) {
+  db.prepare('ALTER TABLE users ADD COLUMN linuxdo_user_id INTEGER').run()
+}
+db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_linuxdo_user_id ON users(linuxdo_user_id) WHERE linuxdo_user_id IS NOT NULL')
 
 const profileColumns = getColumns('user_profiles')
 if (!profileColumns.includes('personal_token_encrypted')) {

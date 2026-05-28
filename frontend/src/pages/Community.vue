@@ -5,6 +5,7 @@ import AppLayout from '../layouts/AppLayout.vue'
 import { deleteCommunityPost, fetchCommunityFeed } from '../api/image'
 import { useToastStore } from '../stores/toast'
 import { useUserStore } from '../stores/user'
+import { formatDateTime } from '../utils/datetime'
 
 const toastStore = useToastStore()
 const userStore = useUserStore()
@@ -55,7 +56,7 @@ onMounted(loadFeed)
             <img class="community-avatar" :src="post.avatarUrl || '/lcode-image-logo.png'" alt="用户头像" />
             <div>
               <strong>{{ post.username }}</strong>
-              <p class="muted">发布于 {{ post.createdAt }}</p>
+              <p class="muted">发布于 {{ formatDateTime(post.createdAt) }}</p>
             </div>
           </div>
 
@@ -65,7 +66,7 @@ onMounted(loadFeed)
           <p class="community-content">{{ post.content }}</p>
           <RouterLink :to="`/community/${post.id}`" class="community-more">查看全文</RouterLink>
           <p class="muted community-prompt">Prompt：{{ post.prompt }}</p>
-          <p class="muted community-expire">到期时间：{{ post.expiresAt }}</p>
+          <p class="muted community-expire">到期时间：{{ formatDateTime(post.expiresAt) }}</p>
           <div v-if="userStore.user?.id === post.userId" class="community-actions">
             <button type="button" class="button-danger" @click="removePost(post)">删除帖子</button>
           </div>

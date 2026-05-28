@@ -4,6 +4,7 @@ import AppLayout from '../layouts/AppLayout.vue'
 import AvatarConfirmModal from '../components/AvatarConfirmModal.vue'
 import { useToastStore } from '../stores/toast'
 import { useUserStore } from '../stores/user'
+import { formatDateTime } from '../utils/datetime'
 
 const userStore = useUserStore()
 const toastStore = useToastStore()
@@ -114,8 +115,8 @@ onMounted(loadPage)
           <div class="profile-info muted">
             <p>用户名：<strong>{{ profile.username || userStore.user?.username || '-' }}</strong></p>
             <p>累计生成：<strong>{{ profile.generationCount ?? 0 }}</strong></p>
-            <p>头像更新时间：<strong>{{ profile.avatarUpdatedAt || '尚未设置' }}</strong></p>
-            <p>配置更新时间：<strong>{{ profile.updatedAt || '-' }}</strong></p>
+            <p>头像更新时间：<strong>{{ formatDateTime(profile.avatarUpdatedAt, '尚未设置') }}</strong></p>
+            <p>配置更新时间：<strong>{{ formatDateTime(profile.updatedAt) }}</strong></p>
           </div>
         </section>
       </div>

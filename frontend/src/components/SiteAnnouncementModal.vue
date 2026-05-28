@@ -1,4 +1,6 @@
 <script setup>
+import { formatDateTime } from '../utils/datetime'
+
 const props = defineProps({
   open: {
     type: Boolean,
@@ -26,7 +28,7 @@ const emit = defineEmits(['close', 'dismiss-today'])
             <button type="button" class="button-secondary icon-button" aria-label="关闭公告" @click="emit('close')">×</button>
           </div>
           <p class="announcement-content">{{ announcement.content || '当前暂无公告内容。' }}</p>
-          <p v-if="announcement.updatedAt" class="muted announcement-meta">更新时间：{{ announcement.updatedAt }}</p>
+          <p v-if="announcement.updatedAt" class="muted announcement-meta">更新时间：{{ formatDateTime(announcement.updatedAt) }}</p>
           <div class="announcement-actions">
             <button type="button" class="button-secondary" @click="emit('close')">关闭</button>
             <button type="button" class="button-primary" @click="emit('dismiss-today')">今日不再提示</button>
