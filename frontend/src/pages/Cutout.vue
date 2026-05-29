@@ -12,7 +12,7 @@ const isCaptchaReady = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 
-const canSubmit = computed(() => selectedFile.value && isCaptchaReady.value && !isLoading.value)
+const canSubmit = computed(() => selectedFile.value && !isLoading.value)
 const fileMeta = computed(() => {
   if (!selectedFile.value) return ''
 
@@ -63,9 +63,11 @@ async function submitCutout() {
   resetResult()
 
   try {
+    await waitForCaptchaReady()
+
     const captchaCode = getCaptchaCode()
     if (!captchaCode) {
-      throw new Error('行为码还未初始化，请等待几秒并移动鼠标后重试。')
+      throw new Error('行为码还未初始化，请移动鼠标后重试。')
     }
 
     const formData = new FormData()
@@ -103,6 +105,7 @@ function downloadResult() {
 
 let cleanupInteractionTracking = () => {}
 let captchaScriptLoadPromise = null
+let captchaReadyPromise = null
 
 function loadCaptchaScript() {
   if (window.leshemModule?.ccall) return Promise.resolve()
@@ -119,15 +122,52 @@ function loadCaptchaScript() {
 
   captchaScriptLoadPromise = new Promise((resolve, reject) => {
     const script = document.createElement('script')
-    script.src = '/wasm/reCAPTCHA.js'
+    const timer = window.setTimeout(() => {
+      captchaScriptLoadPromise = null
+      script.remove()
+      reject(new Error('行为码脚本加载超时，请刷新页面后重试。'))
+    }, 10000)
+
+    script.src = '/captcha/reCAPTCHA.js'
     script.async = true
     script.dataset.captchaScript = 'recaptcha'
-    script.addEventListener('load', resolve, { once: true })
-    script.addEventListener('error', () => reject(new Error('行为码脚本加载失败，请刷新页面后重试。')), { once: true })
+    script.addEventListener('load', () => {
+      window.clearTimeout(timer)
+      resolve()
+    }, { once: true })
+    script.addEventListener('error', () => {
+      window.clearTimeout(timer)
+      captchaScriptLoadPromise = null
+      reject(new Error('行为码脚本加载失败，请刷新页面后重试。'))
+    }, { once: true })
     document.head.appendChild(script)
   })
 
   return captchaScriptLoadPromise
+}
+
+function waitForCaptchaReady() {
+  if (markCaptchaReady()) return Promise.resolve()
+  if (captchaReadyPromise) return captchaReadyPromise
+
+  captchaReadyPromise = loadCaptchaScript().then(() => new Promise((resolve, reject) => {
+    const startedAt = Date.now()
+    const timer = window.setInterval(() => {
+      if (markCaptchaReady()) {
+        window.clearInterval(timer)
+        resolve()
+        return
+      }
+
+      if (Date.now() - startedAt > 10000) {
+        window.clearInterval(timer)
+        captchaReadyPromise = null
+        reject(new Error('行为码初始化超时，请刷新页面后重试。'))
+      }
+    }, 250)
+  }))
+
+  return captchaReadyPromise
 }
 
 function getCaptchaCode() {
@@ -242,7 +282,7 @@ onBeforeUnmount(() => {
           </div>
 
           <p class="helper-text" aria-live="polite">
-            {{ isCaptchaReady ? '行为码已就绪，可以开始抠图。' : '正在初始化行为码，请稍等并移动鼠标。' }}
+            {{ isCaptchaReady ? '行为码已就绪，可以开始抠图。' : '选择图片后可开始抠图，行为码会自动初始化。' }}
           </p>
 
           <button class="button-primary action-button" type="button" :disabled="!canSubmit" @click="submitCutout">

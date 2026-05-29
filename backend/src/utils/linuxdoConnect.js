@@ -1,10 +1,12 @@
 import axios from 'axios'
+import https from 'node:https'
 import { getLinuxdoConfig } from '../services/linuxdoConnectService.js'
 
 const AUTH_URL = 'https://connect.linux.do/oauth2/authorize'
 const TOKEN_URL = 'https://connect.linux.do/oauth2/token'
 const USER_INFO_URL = 'https://connect.linux.do/api/user'
 const REQUEST_TIMEOUT_MS = 15000
+const linuxdoHttpsAgent = new https.Agent({ family: 4 })
 const TRANSIENT_ERROR_CODES = new Set(['ECONNRESET', 'ECONNABORTED', 'ETIMEDOUT', 'EAI_AGAIN'])
 
 function withStep(error, step) {
@@ -60,6 +62,7 @@ export async function exchangeCodeForToken(code) {
         Accept: 'application/json',
       },
       timeout: REQUEST_TIMEOUT_MS,
+      httpsAgent: linuxdoHttpsAgent,
     }))
     return data
   } catch (error) {
@@ -72,6 +75,7 @@ export async function fetchLinuxdoUser(accessToken) {
     const { data } = await requestWithRetry(() => axios.get(USER_INFO_URL, {
       headers: { Authorization: `Bearer ${accessToken}` },
       timeout: REQUEST_TIMEOUT_MS,
+      httpsAgent: linuxdoHttpsAgent,
     }))
     return data
   } catch (error) {
