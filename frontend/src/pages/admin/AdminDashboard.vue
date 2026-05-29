@@ -1,7 +1,7 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import AppLayout from '../../layouts/AppLayout.vue'
+import AdminLayout from '../../layouts/AdminLayout.vue'
 import {
   changeAdminPassword,
   fetchAdminStatus,
@@ -81,18 +81,16 @@ onMounted(async () => {
 </script>
 
 <template>
-  <AppLayout>
-    <div class="admin-shell">
-      <section class="card admin-hero">
+  <AdminLayout>
+    <div class="admin-content">
+      <div class="admin-header">
         <div>
-          <p class="admin-eyebrow">{{ i18n.t('adminDashboard') }}</p>
-          <h1 class="section-title">{{ i18n.t('adminHeroTitle') }}</h1>
-          <p class="muted section-copy">{{ i18n.t('adminHeroCopy') }}</p>
+          <h1 class="admin-title">{{ i18n.t('adminHeroTitle') }}</h1>
+          <p class="admin-subtitle">{{ i18n.t('adminHeroCopy') }}</p>
         </div>
-        <button class="button-secondary" type="button" @click="logout">{{ i18n.t('adminLogout') }}</button>
-      </section>
+      </div>
 
-      <section v-if="mustChangePassword" class="card password-guard">
+      <section v-if="mustChangePassword" class="card admin-card password-guard">
         <div>
           <p class="admin-eyebrow">首次登录安全校验</p>
           <h2>请先修改管理员密码</h2>
@@ -119,15 +117,38 @@ onMounted(async () => {
         </div>
       </section>
 
-      <section v-if="!mustChangePassword" class="admin-management-links">
-        <RouterLink to="/admin/config" class="card admin-management-link">
-          <span>{{ i18n.t('adminConfig') }}</span>
+      <section v-if="!mustChangePassword" class="quick-links">
+        <RouterLink to="/admin/config" class="quick-link-card card">
+          <div class="quick-link-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3" />
+            </svg>
+          </div>
+          <h3>{{ i18n.t('adminConfig') }}</h3>
+          <p>配置系统参数和上游接口</p>
         </RouterLink>
-        <RouterLink to="/admin/users" class="card admin-management-link">
-          <span>{{ i18n.t('adminUsers') }}</span>
+        <RouterLink to="/admin/users" class="quick-link-card card">
+          <div class="quick-link-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87m-4-12a4 4 0 0 1 0 7.75" />
+            </svg>
+          </div>
+          <h3>{{ i18n.t('adminUsers') }}</h3>
+          <p>管理用户账号和权限</p>
         </RouterLink>
-        <RouterLink to="/admin/images" class="card admin-management-link">
-          <span>{{ i18n.t('adminImages') }}</span>
+        <RouterLink to="/admin/images" class="quick-link-card card">
+          <div class="quick-link-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <polyline points="21 15 16 10 5 21" />
+            </svg>
+          </div>
+          <h3>{{ i18n.t('adminImages') }}</h3>
+          <p>查看和管理生成的图片</p>
         </RouterLink>
       </section>
 
@@ -163,62 +184,86 @@ onMounted(async () => {
         </section>
       </div>
     </div>
-  </AppLayout>
+  </AdminLayout>
 </template>
 
 <style scoped>
-.admin-shell {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
+.admin-content {
+  max-width: 1400px;
 }
 
-.admin-hero,
+.admin-header {
+  margin-bottom: 32px;
+}
+
+.admin-title {
+  margin: 0 0 8px;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.admin-subtitle {
+  margin: 0;
+  font-size: 15px;
+  color: var(--color-text-secondary);
+}
+
 .admin-card,
 .password-guard {
-  padding: 22px;
+  padding: 28px;
 }
 
-.admin-hero {
-  display: flex;
-  justify-content: space-between;
-  gap: 18px;
-  align-items: flex-start;
-}
-
-.admin-eyebrow {
-  margin: 0 0 10px;
-  color: var(--color-primary);
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.admin-management-links {
+.quick-links {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-bottom: 32px;
 }
 
-.admin-management-link {
-  min-height: 96px;
+.quick-link-card {
+  padding: 28px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+}
+
+.quick-link-card:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(76, 110, 245, 0.15);
+}
+
+.quick-link-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--color-primary-soft);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 22px;
-  border-radius: 24px;
-  color: var(--color-text-soft);
-  text-decoration: none;
-  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--color-primary);
 }
 
-.admin-management-link:hover {
-  background: var(--color-primary-soft);
+.quick-link-card h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.quick-link-card p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
 }
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 20px;
 }
 
 .admin-field {
@@ -238,26 +283,54 @@ onMounted(async () => {
 .statistics-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+  gap: 14px;
+  margin-top: 16px;
 }
 
 .statistics-grid div {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 14px;
-  border-radius: 18px;
+  gap: 10px;
+  padding: 18px;
+  border-radius: 16px;
   background: var(--color-card-muted);
+  transition: all 0.2s ease;
+}
+
+.statistics-grid div:hover {
+  background: var(--color-card-hover, rgba(120, 130, 170, 0.18));
+  transform: translateY(-2px);
+}
+
+.statistics-grid div strong {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-primary);
 }
 
 .stat-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
+  margin-top: 16px;
 }
 
 .stat-list p {
   margin: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(120, 130, 170, 0.08);
+}
+
+.stat-list p:last-child {
+  border-bottom: none;
+}
+
+.stat-list strong {
+  color: var(--color-text);
+  font-weight: 600;
 }
 
 .password-grid {
@@ -269,21 +342,23 @@ onMounted(async () => {
 }
 
 @media (max-width: 1024px) {
-  .admin-management-links {
+  .quick-links {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-grid {
     grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 768px) {
-  .admin-hero,
   .admin-card,
   .password-guard {
-    padding: 18px;
+    padding: 20px;
   }
 
-  .admin-hero {
-    flex-direction: column;
-    align-items: flex-start;
+  .admin-title {
+    font-size: 24px;
   }
 
   .statistics-grid,

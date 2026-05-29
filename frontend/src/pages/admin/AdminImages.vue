@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import AppLayout from '../../layouts/AppLayout.vue'
+import AdminLayout from '../../layouts/AdminLayout.vue'
 import { clearAllAdminImages, deleteAdminImage, fetchAdminImages } from '../../api/admin'
 import { useI18nStore } from '../../stores/i18n'
 import { useToastStore } from '../../stores/toast'
@@ -56,22 +56,18 @@ onMounted(async () => {
 </script>
 
 <template>
-  <AppLayout>
-    <div class="admin-page-shell">
-      <section class="card admin-card admin-main-card">
-        <div class="section-head">
-          <div>
-            <p class="admin-eyebrow">{{ i18n.t('adminDashboard') }}</p>
-            <h1 class="section-title">{{ i18n.t('adminImages') }}</h1>
-          </div>
-          <div class="head-actions">
-            <RouterLink to="/admin" class="button-secondary admin-link-button">{{ i18n.t('adminOverview') }}</RouterLink>
-            <button class="button-danger" type="button" @click="clearAllAdminImagesAction">{{ i18n.t('clearGeneratedImages') }}</button>
-          </div>
+  <AdminLayout>
+    <div class="admin-content">
+      <div class="admin-header">
+        <div>
+          <h1 class="admin-title">{{ i18n.t('adminImages') }}</h1>
+          <p class="admin-subtitle">查看和管理所有生成的图片资源</p>
         </div>
+        <button class="button-danger" type="button" @click="clearAllAdminImagesAction">{{ i18n.t('clearGeneratedImages') }}</button>
+      </div>
 
-        <div v-if="loading" class="muted loading-copy">Loading...</div>
-        <div v-else class="table-wrap">
+      <div v-if="loading" class="muted loading-copy">Loading...</div>
+      <div v-else class="card admin-card">
           <table class="admin-table">
             <thead>
               <tr>
@@ -109,64 +105,41 @@ onMounted(async () => {
             <button class="button-secondary" type="button" :disabled="currentPage === 1" @click="currentPage -= 1">上一页</button>
             <span class="pagination-copy">{{ currentPage }} / {{ totalPages }}</span>
             <button class="button-secondary" type="button" :disabled="currentPage === totalPages" @click="currentPage += 1">下一页</button>
-          </div>
         </div>
-      </section>
-
-      <aside class="admin-section-nav card" aria-label="后台导航">
-        <RouterLink to="/admin/config" class="admin-section-link">{{ i18n.t('adminConfig') }}</RouterLink>
-        <RouterLink to="/admin/users" class="admin-section-link">{{ i18n.t('adminUsers') }}</RouterLink>
-        <RouterLink to="/admin/images" class="admin-section-link active">{{ i18n.t('adminImages') }}</RouterLink>
-      </aside>
+      </div>
     </div>
-  </AppLayout>
+  </AdminLayout>
 </template>
 
 <style scoped>
-.admin-page-shell {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 220px;
-  gap: 18px;
-  align-items: start;
+.admin-content {
+  max-width: 1600px;
 }
 
-.admin-card,
-.admin-section-nav {
-  padding: 22px;
-}
-
-.admin-main-card {
-  min-width: 0;
-}
-
-.admin-eyebrow {
-  margin: 0 0 10px;
-  color: var(--color-primary);
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.section-head,
-.head-actions {
+.admin-header {
   display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.section-head {
   justify-content: space-between;
-  margin-bottom: 16px;
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 32px;
 }
 
-.head-actions {
-  flex-wrap: wrap;
-  justify-content: flex-end;
+.admin-title {
+  margin: 0 0 8px;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-text);
 }
 
-.admin-link-button {
-  display: inline-flex;
-  align-items: center;
-  text-decoration: none;
+.admin-subtitle {
+  margin: 0;
+  font-size: 15px;
+  color: var(--color-text-secondary);
+}
+
+.admin-card {
+  padding: 0;
+  overflow: hidden;
 }
 
 .table-wrap {
@@ -180,10 +153,37 @@ onMounted(async () => {
 
 .admin-table th,
 .admin-table td {
-  padding: 12px 10px;
-  border-bottom: 1px solid rgba(120, 130, 170, 0.16);
-  vertical-align: top;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(120, 130, 170, 0.12);
+  vertical-align: middle;
   text-align: left;
+}
+
+.admin-table th {
+  background: var(--color-card-muted);
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-secondary);
+}
+
+.admin-table tbody tr {
+  transition: background 0.2s ease;
+}
+
+.admin-table tbody tr:hover {
+  background: var(--color-card-hover, rgba(120, 130, 170, 0.06));
+}
+
+.admin-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.index-col {
+  width: 56px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
 }
 
 .index-col {
@@ -194,90 +194,66 @@ onMounted(async () => {
 
 .pagination {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   align-items: center;
-  gap: 12px;
-  padding-top: 16px;
+  gap: 16px;
+  padding-top: 24px;
 }
 
 .pagination-copy {
   color: var(--color-text-secondary);
   font-size: 14px;
-  min-width: 56px;
+  min-width: 80px;
   text-align: center;
+  font-weight: 500;
 }
 
 .admin-thumb {
-  width: 68px;
-  height: 68px;
+  width: 72px;
+  height: 72px;
   object-fit: cover;
-  border-radius: 16px;
+  border-radius: 12px;
   display: block;
+  border: 2px solid var(--color-card-border, rgba(120, 130, 170, 0.12));
+  background: var(--color-card-muted);
 }
 
 .prompt-cell {
-  max-width: 320px;
+  max-width: 360px;
   white-space: pre-wrap;
-}
-
-.admin-section-nav {
-  position: sticky;
-  top: 124px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.admin-section-link {
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  padding: 0 14px;
-  border-radius: 999px;
-  background: var(--color-card-muted);
-  color: var(--color-text-secondary);
-  text-decoration: none;
-}
-
-.admin-section-link.active {
-  color: var(--color-text-soft);
-  background: var(--color-primary-soft);
+  line-height: 1.5;
 }
 
 .loading-copy {
-  padding: 24px 0;
-}
-
-@media (max-width: 1024px) {
-  .admin-page-shell {
-    grid-template-columns: 1fr;
-  }
-
-  .admin-section-nav {
-    position: static;
-    order: -1;
-    flex-direction: row;
-    overflow-x: auto;
-  }
+  padding: 32px 0;
+  text-align: center;
+  color: var(--color-text-secondary);
 }
 
 @media (max-width: 768px) {
-  .admin-card,
-  .admin-section-nav {
-    padding: 18px;
-  }
-
-  .section-head {
+  .admin-header {
     flex-direction: column;
     align-items: flex-start;
+    gap: 16px;
   }
 
-  .head-actions {
-    justify-content: flex-start;
+  .admin-title {
+    font-size: 24px;
   }
 
   .pagination {
-    justify-content: flex-start;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .admin-table th,
+  .admin-table td {
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  .prompt-cell {
+    max-width: 240px;
   }
 }
 </style>

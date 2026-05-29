@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import AppLayout from '../../layouts/AppLayout.vue'
+import AdminLayout from '../../layouts/AdminLayout.vue'
 import { fetchUsers, resetUserPassword, updateUserBanStatus } from '../../api/admin'
 import { useI18nStore } from '../../stores/i18n'
 import { useToastStore } from '../../stores/toast'
@@ -77,19 +77,15 @@ onMounted(async () => {
 </script>
 
 <template>
-  <AppLayout>
-    <div class="admin-page-shell">
-      <section class="card admin-card admin-main-card">
-        <div class="section-head">
-          <div>
-            <p class="admin-eyebrow">{{ i18n.t('adminDashboard') }}</p>
-            <h1 class="section-title">{{ i18n.t('adminUsers') }}</h1>
-          </div>
-          <RouterLink to="/admin" class="button-secondary admin-link-button">{{ i18n.t('adminOverview') }}</RouterLink>
-        </div>
+  <AdminLayout>
+    <div class="admin-content">
+      <div class="admin-header">
+        <h1 class="admin-title">{{ i18n.t('adminUsers') }}</h1>
+        <p class="admin-subtitle">管理用户账号、重置密码和封禁操作</p>
+      </div>
 
-        <div v-if="loading" class="muted loading-copy">Loading...</div>
-        <div v-else class="table-wrap">
+      <div v-if="loading" class="muted loading-copy">Loading...</div>
+      <div v-else class="card admin-card">
           <table class="admin-table">
             <thead>
               <tr>
@@ -128,55 +124,37 @@ onMounted(async () => {
             <button class="button-secondary" type="button" :disabled="currentPage === 1" @click="currentPage -= 1">上一页</button>
             <span class="pagination-copy">{{ currentPage }} / {{ totalPages }}</span>
             <button class="button-secondary" type="button" :disabled="currentPage === totalPages" @click="currentPage += 1">下一页</button>
-          </div>
         </div>
-      </section>
-
-      <aside class="admin-section-nav card" aria-label="后台导航">
-        <RouterLink to="/admin/config" class="admin-section-link">{{ i18n.t('adminConfig') }}</RouterLink>
-        <RouterLink to="/admin/users" class="admin-section-link active">{{ i18n.t('adminUsers') }}</RouterLink>
-        <RouterLink to="/admin/images" class="admin-section-link">{{ i18n.t('adminImages') }}</RouterLink>
-      </aside>
+      </div>
     </div>
-  </AppLayout>
+  </AdminLayout>
 </template>
 
 <style scoped>
-.admin-page-shell {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 220px;
-  gap: 18px;
-  align-items: start;
+.admin-content {
+  max-width: 1600px;
 }
 
-.admin-card,
-.admin-section-nav {
-  padding: 22px;
+.admin-header {
+  margin-bottom: 32px;
 }
 
-.admin-main-card {
-  min-width: 0;
+.admin-title {
+  margin: 0 0 8px;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-text);
 }
 
-.admin-eyebrow {
-  margin: 0 0 10px;
-  color: var(--color-primary);
-  font-size: 13px;
-  font-weight: 600;
+.admin-subtitle {
+  margin: 0;
+  font-size: 15px;
+  color: var(--color-text-secondary);
 }
 
-.section-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.admin-link-button {
-  display: inline-flex;
-  align-items: center;
-  text-decoration: none;
+.admin-card {
+  padding: 0;
+  overflow: hidden;
 }
 
 .table-wrap {
@@ -190,10 +168,37 @@ onMounted(async () => {
 
 .admin-table th,
 .admin-table td {
-  padding: 12px 10px;
-  border-bottom: 1px solid rgba(120, 130, 170, 0.16);
-  vertical-align: top;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(120, 130, 170, 0.12);
+  vertical-align: middle;
   text-align: left;
+}
+
+.admin-table th {
+  background: var(--color-card-muted);
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-secondary);
+}
+
+.admin-table tbody tr {
+  transition: background 0.2s ease;
+}
+
+.admin-table tbody tr:hover {
+  background: var(--color-card-hover, rgba(120, 130, 170, 0.06));
+}
+
+.admin-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.index-col {
+  width: 56px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
 }
 
 .index-col {
@@ -204,93 +209,74 @@ onMounted(async () => {
 
 .pagination {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   align-items: center;
-  gap: 12px;
-  padding-top: 16px;
+  gap: 16px;
+  padding-top: 24px;
 }
 
 .pagination-copy {
   color: var(--color-text-secondary);
   font-size: 14px;
-  min-width: 56px;
+  min-width: 80px;
   text-align: center;
+  font-weight: 500;
 }
 
 .admin-avatar {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   object-fit: cover;
-  border-radius: 14px;
+  border-radius: 12px;
   display: block;
   background: var(--color-card-muted);
+  border: 2px solid var(--color-card-border, rgba(120, 130, 170, 0.12));
 }
 
 .inline-actions {
   display: flex;
-  gap: 10px;
-  min-width: 280px;
-}
-
-.admin-section-nav {
-  position: sticky;
-  top: 124px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.admin-section-link {
-  min-height: 44px;
-  display: inline-flex;
+  gap: 12px;
+  min-width: 300px;
   align-items: center;
-  padding: 0 14px;
-  border-radius: 999px;
-  background: var(--color-card-muted);
-  color: var(--color-text-secondary);
-  text-decoration: none;
 }
 
-.admin-section-link.active {
-  color: var(--color-text-soft);
-  background: var(--color-primary-soft);
+.inline-actions {
+  display: flex;
+  gap: 12px;
+  min-width: 300px;
+  align-items: center;
 }
 
 .loading-copy {
-  padding: 24px 0;
-}
-
-@media (max-width: 1024px) {
-  .admin-page-shell {
-    grid-template-columns: 1fr;
-  }
-
-  .admin-section-nav {
-    position: static;
-    order: -1;
-    flex-direction: row;
-    overflow-x: auto;
-  }
+  padding: 32px 0;
+  text-align: center;
+  color: var(--color-text-secondary);
 }
 
 @media (max-width: 768px) {
-  .admin-card,
-  .admin-section-nav {
-    padding: 18px;
+  .admin-card {
+    padding: 0;
   }
 
-  .section-head {
-    flex-direction: column;
-    align-items: flex-start;
+  .admin-title {
+    font-size: 24px;
   }
 
   .inline-actions {
-    min-width: 220px;
+    min-width: 240px;
     flex-direction: column;
+    align-items: stretch;
   }
 
   .pagination {
-    justify-content: flex-start;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .admin-table th,
+  .admin-table td {
+    padding: 12px;
+    font-size: 14px;
   }
 }
 </style>

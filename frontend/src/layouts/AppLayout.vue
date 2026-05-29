@@ -6,6 +6,13 @@ import SiteAnnouncementModal from '../components/SiteAnnouncementModal.vue'
 import { fetchAnnouncement } from '../api/image'
 import { useI18nStore } from '../stores/i18n'
 
+defineProps({
+  immersive: {
+    type: Boolean,
+    default: false,
+  },
+})
+
 const i18n = useI18nStore()
 const apiKeyModalOpen = ref(false)
 const announcementOpen = ref(false)
@@ -66,13 +73,13 @@ onMounted(loadAnnouncement)
 </script>
 
 <template>
-  <div class="shell">
-    <div class="page">
+  <div class="shell" :class="{ 'shell-immersive': immersive }">
+    <div class="page" :class="{ 'page-immersive': immersive }">
       <HeaderBar :on-open-api-key="openApiKeyModal" :on-open-announcement="openAnnouncement" :has-announcement="announcement.isEnabled" />
-      <main class="layout-main">
+      <main class="layout-main" :class="{ 'layout-main-immersive': immersive }">
         <slot />
       </main>
-      <footer class="layout-footer muted">
+      <footer v-if="!immersive" class="layout-footer muted">
         <span>{{ i18n.t('footerBrand') }}</span>
         <span>{{ i18n.t('footerRetention') }}</span>
       </footer>
@@ -86,6 +93,15 @@ onMounted(loadAnnouncement)
 .layout-main {
   min-height: calc(100vh - 180px);
   transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.page-immersive {
+  width: min(1440px, calc(100% - 32px));
+  padding-bottom: 0;
+}
+
+.layout-main-immersive {
+  min-height: calc(100dvh - 112px);
 }
 
 .layout-footer {

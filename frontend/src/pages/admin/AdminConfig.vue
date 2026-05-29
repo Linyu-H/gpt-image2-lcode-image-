@@ -1,7 +1,7 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import AppLayout from '../../layouts/AppLayout.vue'
+import AdminLayout from '../../layouts/AdminLayout.vue'
 import {
   cleanExpiredImages,
   createFeaturedPrompt,
@@ -232,34 +232,32 @@ onMounted(async () => {
 </script>
 
 <template>
-  <AppLayout>
-    <div class="admin-page-shell">
-      <section class="card admin-card admin-main-card">
-        <div class="section-head">
-          <div>
-            <p class="admin-eyebrow">{{ i18n.t('adminDashboard') }}</p>
-            <h1 class="section-title">{{ i18n.t('adminConfig') }}</h1>
-          </div>
-          <RouterLink to="/admin" class="button-secondary admin-link-button">{{ i18n.t('adminOverview') }}</RouterLink>
-        </div>
+  <AdminLayout>
+    <div class="admin-content">
+      <div class="admin-header">
+        <h1 class="admin-title">{{ i18n.t('adminConfig') }}</h1>
+        <p class="admin-subtitle">配置系统参数、上游接口和站点设置</p>
+      </div>
 
-        <p v-if="loading" class="muted loading-copy">Loading...</p>
-        <p v-else-if="mustChangePassword" class="muted loading-copy">请先在控制台完成首次密码修改，再回到这里配置。</p>
+      <p v-if="loading" class="muted loading-copy">Loading...</p>
+      <p v-else-if="mustChangePassword" class="muted loading-copy">请先在控制台完成首次密码修改，再回到这里配置。</p>
 
-        <div v-else class="admin-grid">
-          <section class="card admin-card admin-sub-card">
+      <div v-else class="config-sections">
+          <section class="card admin-sub-card">
             <h2>基础配置</h2>
             <p v-if="message" class="admin-message">{{ message }}</p>
 
-            <label class="admin-field">
-              <span>图片 API 地址</span>
-              <input v-model="form.imageApiBaseUrl" class="input" placeholder="例如 https://image.lcode.space/v1 或 https://image.lcode.space" />
-            </label>
+            <div class="config-grid">
+              <label class="admin-field">
+                <span>图片 API 地址</span>
+                <input v-model="form.imageApiBaseUrl" class="input" placeholder="例如 https://image.lcode.space/v1 或 https://image.lcode.space" />
+              </label>
 
-            <label class="admin-field">
-              <span>站点 URL</span>
-              <input v-model="form.siteBaseUrl" class="input" placeholder="例如 https://image.lcode.space" />
-            </label>
+              <label class="admin-field">
+                <span>站点 URL</span>
+                <input v-model="form.siteBaseUrl" class="input" placeholder="例如 https://image.lcode.space" />
+              </label>
+            </div>
 
             <label class="admin-field">
               <span>共享身份令牌</span>
@@ -270,36 +268,49 @@ onMounted(async () => {
               <button class="button-primary" type="button" @click="saveUpstreamAction">保存上游配置</button>
               <button class="button-secondary" type="button" @click="testUpstreamAction">测试上游 API</button>
             </div>
+          </section>
 
-            <label class="admin-field">
-              <span>发件 QQ 邮箱</span>
-              <input v-model="form.emailAuthUser" class="input" type="email" placeholder="例如 123456789@qq.com" />
-            </label>
-            <label class="admin-field">
-              <span>邮箱授权码</span>
-              <input v-model="form.emailAuthPass" class="input" type="password" placeholder="请输入 QQ 邮箱 SMTP 授权码" />
-            </label>
+          <section class="card admin-sub-card">
+            <h2>邮箱服务配置</h2>
+            <div class="config-grid">
+              <label class="admin-field">
+                <span>发件 QQ 邮箱</span>
+                <input v-model="form.emailAuthUser" class="input" type="email" placeholder="例如 123456789@qq.com" />
+              </label>
+              <label class="admin-field">
+                <span>邮箱授权码</span>
+                <input v-model="form.emailAuthPass" class="input" type="password" placeholder="请输入 QQ 邮箱 SMTP 授权码" />
+              </label>
+            </div>
             <button class="button-secondary" type="button" @click="saveEmailServiceAction">保存邮箱服务配置</button>
+          </section>
 
-            <label class="admin-field toggle-field">
-              <span>允许平台注册</span>
-              <input v-model="form.allowRegister" type="checkbox" class="switch" role="switch" />
-            </label>
-            <label class="admin-field toggle-field">
-              <span>注册必须邀请码</span>
-              <input v-model="form.requireInviteCode" type="checkbox" class="switch" role="switch" />
-            </label>
+          <section class="card admin-sub-card">
+            <h2>注册与限流</h2>
+            <div class="config-grid">
+              <label class="admin-field toggle-field">
+                <span>允许平台注册</span>
+                <input v-model="form.allowRegister" type="checkbox" class="switch" role="switch" />
+              </label>
+              <label class="admin-field toggle-field">
+                <span>注册必须邀请码</span>
+                <input v-model="form.requireInviteCode" type="checkbox" class="switch" role="switch" />
+              </label>
+            </div>
             <button class="button-secondary" type="button" @click="saveRegisterPolicyAction">保存注册策略</button>
 
             <label class="admin-field">
               <span>每日单 IP 次数限制</span>
-              <input v-model="form.dailyLimit" class="input" type="number" min="1" />
+              <input v-model="form.dailyLimit" class="input" type="number" min="1" style="max-width: 200px;" />
             </label>
             <button class="button-secondary" type="button" @click="saveLimitAction">保存限流</button>
+          </section>
 
+          <section class="card admin-sub-card">
+            <h2>自动清理</h2>
             <label class="admin-field">
               <span>自动清理 Cron</span>
-              <input v-model="form.cleanupCron" class="input" placeholder="0 * * * *" />
+              <input v-model="form.cleanupCron" class="input" placeholder="0 * * * *" style="max-width: 300px;" />
             </label>
             <div class="admin-actions">
               <button class="button-secondary" type="button" @click="saveCronAction">保存清理周期</button>
@@ -307,7 +318,7 @@ onMounted(async () => {
             </div>
           </section>
 
-          <section class="card admin-card admin-sub-card">
+          <section class="card admin-sub-card">
             <h2>网站公告</h2>
             <label class="admin-field">
               <span>公告标题</span>
@@ -324,7 +335,7 @@ onMounted(async () => {
             <button class="button-primary" type="button" @click="saveAnnouncementAction">保存公告</button>
           </section>
 
-          <section class="card admin-card admin-sub-card">
+          <section class="card admin-sub-card">
             <div class="linuxdo-heading">
               <img src="https://wiki.linux.do/_next/image?url=%2Ffavicon.ico&w=32&q=75" alt="Linux.do" class="linuxdo-heading-icon" />
               <h2>Linux.do 接入配置</h2>
@@ -354,7 +365,7 @@ onMounted(async () => {
             </div>
           </section>
 
-          <section class="card admin-card admin-sub-card stat-card">
+          <section class="card admin-sub-card">
             <h2>当前状态</h2>
             <div class="stat-list muted">
               <p>站点 URL：<strong>{{ status?.siteBaseUrl || '-' }}</strong></p>
@@ -372,7 +383,7 @@ onMounted(async () => {
           </section>
         </div>
 
-        <section v-if="!loading && !mustChangePassword" class="card admin-card admin-sub-card wide-card">
+        <section v-if="!loading && !mustChangePassword" class="card admin-sub-card">
           <h2>示例灵感</h2>
           <div class="admin-actions wrap-actions">
             <input v-model="newFeaturedPrompt" class="input flex-input" placeholder="输入新的首页示例灵感 Prompt" />
@@ -386,7 +397,7 @@ onMounted(async () => {
           </ul>
         </section>
 
-        <section v-if="!loading && !mustChangePassword" class="card admin-card admin-sub-card wide-card">
+        <section v-if="!loading && !mustChangePassword" class="card admin-sub-card">
           <h2>邀请码管理</h2>
           <div class="admin-actions wrap-actions">
             <input v-model="form.inviteCodeCount" class="input short-input" type="number" min="1" />
@@ -399,70 +410,72 @@ onMounted(async () => {
             </li>
           </ul>
         </section>
-      </section>
-
-      <aside class="admin-section-nav card" aria-label="后台导航">
-        <RouterLink to="/admin/config" class="admin-section-link active">{{ i18n.t('adminConfig') }}</RouterLink>
-        <RouterLink to="/admin/users" class="admin-section-link">{{ i18n.t('adminUsers') }}</RouterLink>
-        <RouterLink to="/admin/images" class="admin-section-link">{{ i18n.t('adminImages') }}</RouterLink>
-      </aside>
-    </div>
-  </AppLayout>
+      </div>
+  </AdminLayout>
 </template>
 
 <style scoped>
-.admin-page-shell {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 220px;
-  gap: 18px;
-  align-items: start;
+.admin-content {
+  max-width: 1400px;
 }
 
-.admin-card,
-.admin-section-nav {
-  padding: 22px;
+.admin-header {
+  margin-bottom: 32px;
 }
 
-.admin-main-card {
-  min-width: 0;
+.admin-title {
+  margin: 0 0 8px;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-text);
 }
 
-.admin-eyebrow {
-  margin: 0 0 10px;
-  color: var(--color-primary);
-  font-size: 13px;
-  font-weight: 600;
+.admin-subtitle {
+  margin: 0;
+  font-size: 15px;
+  color: var(--color-text-secondary);
 }
 
-.section-head {
+.config-sections {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
+  flex-direction: column;
+  gap: 24px;
 }
 
-.admin-link-button {
-  display: inline-flex;
-  align-items: center;
-  text-decoration: none;
-}
-
-.admin-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
-  gap: 16px;
+.admin-card {
+  padding: 28px;
 }
 
 .admin-sub-card {
-  padding: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.admin-sub-card h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 20px;
 }
 
 .admin-field {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-bottom: 14px;
+  gap: 8px;
+  margin-bottom: 0;
+}
+
+.admin-field span {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
 }
 
 .toggle-field {
@@ -521,14 +534,14 @@ onMounted(async () => {
 
 .admin-actions {
   display: flex;
-  gap: 10px;
-  margin: 16px 0;
+  gap: 12px;
+  margin: 8px 0 0;
   flex-wrap: wrap;
   align-items: center;
 }
 
 .wrap-actions {
-  align-items: center;
+  align-items: stretch;
 }
 
 .flex-input {
@@ -540,60 +553,68 @@ onMounted(async () => {
 }
 
 .admin-message {
-  margin: 10px 0 18px;
-  color: var(--color-primary);
-}
-
-.linuxdo-heading {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
-}
-
-.linuxdo-heading h2 {
   margin: 0;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-size: 14px;
 }
 
-.linuxdo-heading-icon {
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
+.admin-actions {
+  display: flex;
+  gap: 12px;
+  margin: 0;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
-.linuxdo-hint {
-  margin: 0 0 10px;
-  font-size: 13px;
+.flex-input {
+  flex: 1;
+  min-width: 300px;
 }
 
-.linuxdo-hint code {
-  padding: 2px 6px;
-  border-radius: 6px;
-  background: var(--color-card-muted);
+.short-input {
+  width: 140px;
 }
 
-.wide-card {
-  width: 100%;
-  margin-top: 16px;
-}
-
-.simple-list {
+.stat-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.stat-list p {
   margin: 0;
-  padding: 0;
-  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(120, 130, 170, 0.08);
+}
+
+.stat-list p:last-child {
+  border-bottom: none;
+}
+
+.stat-list strong {
+  color: var(--color-text);
+  font-weight: 600;
 }
 
 .simple-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 14px 16px;
-  border-radius: 18px;
+  gap: 16px;
+  padding: 16px 18px;
+  border-radius: 12px;
   background: var(--color-card-muted);
+  transition: background 0.2s ease;
+}
+
+.simple-row:hover {
+  background: var(--color-card-hover, rgba(120, 130, 170, 0.18));
 }
 
 .compact-list .simple-row {
@@ -605,58 +626,63 @@ onMounted(async () => {
   top: 124px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .admin-section-link {
-  min-height: 44px;
+  min-height: 48px;
   display: inline-flex;
   align-items: center;
-  padding: 0 14px;
-  border-radius: 999px;
-  background: var(--color-card-muted);
+  padding: 0 18px;
+  border-radius: 12px;
+  background: transparent;
   color: var(--color-text-secondary);
   text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.admin-section-link:hover {
+  background: var(--color-card-muted);
+  color: var(--color-text);
 }
 
 .admin-section-link.active {
   color: var(--color-text-soft);
-  background: var(--color-primary-soft);
+  background: var(--color-primary);
+  font-weight: 600;
 }
 
 .loading-copy {
-  padding: 24px 0;
-}
-
-@media (max-width: 1200px) {
-  .admin-grid {
-    grid-template-columns: 1fr;
-  }
+  padding: 32px 0;
+  text-align: center;
+  color: var(--color-text-secondary);
 }
 
 @media (max-width: 1024px) {
-  .admin-page-shell {
+  .config-grid {
     grid-template-columns: 1fr;
-  }
-
-  .admin-section-nav {
-    position: static;
-    order: -1;
-    flex-direction: row;
-    overflow-x: auto;
   }
 }
 
 @media (max-width: 768px) {
   .admin-card,
-  .admin-section-nav {
-    padding: 18px;
+  .admin-sub-card {
+    padding: 20px;
   }
 
-  .section-head,
+  .admin-title {
+    font-size: 24px;
+  }
+
   .simple-row {
     flex-direction: column;
     align-items: flex-start;
+    gap: 12px;
+  }
+
+  .flex-input {
+    min-width: 100%;
   }
 }
 </style>
