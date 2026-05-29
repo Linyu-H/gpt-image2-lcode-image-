@@ -509,6 +509,9 @@ function upsertLinuxdoUser(profile, options = {}) {
 }
 
 function getLinuxdoErrorMessage(error) {
+  if (error?.code === 'ECONNRESET') return 'Linux.do 连接被重置，请稍后重试'
+  if (error?.code === 'ECONNABORTED' || error?.code === 'ETIMEDOUT') return 'Linux.do 连接超时，请稍后重试'
+  if (error?.code === 'EAI_AGAIN') return 'Linux.do 域名解析失败，请稍后重试'
   return error?.response?.data?.error_description
     || error?.response?.data?.message
     || error?.response?.data?.error

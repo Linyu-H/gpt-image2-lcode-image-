@@ -4,6 +4,17 @@ import { getLinuxdoConfig } from '../services/linuxdoConnectService.js'
 const AUTH_URL = 'https://connect.linux.do/oauth2/authorize'
 const TOKEN_URL = 'https://connect.linux.do/oauth2/token'
 const USER_INFO_URL = 'https://connect.linux.do/api/user'
+const REQUEST_TIMEOUT_MS = 15000
+const TRANSIENT_ERROR_CODES = new Set(['ECONNRESET', 'ECONNABORTED', 'ETIMEDOUT', 'EAI_AGAIN'])
+
+async function requestWithRetry(request) {
+  try {
+    return await request()
+  } catch (error) {
+    if (!TRANSIENT_ERROR_CODES.has(error?.code)) throw error
+    return request()
+  }
+}
 
 function requireConfig() {
   const config = getLinuxdoConfig()
@@ -37,20 +48,20 @@ export async function exchangeCodeForToken(code) {
     grant_type: 'authorization_code',
   }).toString()
 
-  const { data } = await axios.post(TOKEN_URL, form, {
+  const { data } = await requestWithRetry(() => axios.post(TOKEN_URL, form, {
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
       Accept: 'application/json',
     },
-    timeout: 15000,
-  })
+    timeout: REQUEST_TIMEOUT_MS,
+  }))
   return data
 }
 
 export async function fetchLinuxdoUser(accessToken) {
-  const { data } = await axios.get(USER_INFO_URL, {
+  const { data } = await requestWithRetry(() => axios.get(USER_INFO_URL, {
     headers: { Authorization: `Bearer ${accessToken}` },
-    timeout: 15000,
-  })
+    timeout: REQUEST_TIMEOUT_MS,
+  }))
   return data
 }
