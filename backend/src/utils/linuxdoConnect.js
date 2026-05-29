@@ -7,6 +7,11 @@ const USER_INFO_URL = 'https://connect.linux.do/api/user'
 const REQUEST_TIMEOUT_MS = 15000
 const TRANSIENT_ERROR_CODES = new Set(['ECONNRESET', 'ECONNABORTED', 'ETIMEDOUT', 'EAI_AGAIN'])
 
+function withStep(error, step) {
+  error.linuxdoStep = step
+  throw error
+}
+
 async function requestWithRetry(request) {
   try {
     return await request()
@@ -48,20 +53,28 @@ export async function exchangeCodeForToken(code) {
     grant_type: 'authorization_code',
   }).toString()
 
-  const { data } = await requestWithRetry(() => axios.post(TOKEN_URL, form, {
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      Accept: 'application/json',
-    },
-    timeout: REQUEST_TIMEOUT_MS,
-  }))
-  return data
+  try {
+    const { data } = await requestWithRetry(() => axios.post(TOKEN_URL, form, {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Accept: 'application/json',
+      },
+      timeout: REQUEST_TIMEOUT_MS,
+    }))
+    return data
+  } catch (error) {
+    withStep(error, 'token')
+  }
 }
 
 export async function fetchLinuxdoUser(accessToken) {
-  const { data } = await requestWithRetry(() => axios.get(USER_INFO_URL, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-    timeout: REQUEST_TIMEOUT_MS,
-  }))
-  return data
+  try {
+    const { data } = await requestWithRetry(() => axios.get(USER_INFO_URL, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      timeout: REQUEST_TIMEOUT_MS,
+    }))
+    return data
+  } catch (error) {
+    withStep(error, 'user')
+  }
 }

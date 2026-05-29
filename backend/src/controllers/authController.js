@@ -509,6 +509,10 @@ function upsertLinuxdoUser(profile, options = {}) {
 }
 
 function getLinuxdoErrorMessage(error) {
+  const status = error?.response?.status
+  if (error?.linuxdoStep === 'token' && (status === 400 || status === 401)) {
+    return 'Linux.do 授权配置可能不正确，请检查 Client ID、Client Secret 和回调地址'
+  }
   if (error?.code === 'ECONNRESET') return 'Linux.do 连接被重置，请稍后重试'
   if (error?.code === 'ECONNABORTED' || error?.code === 'ETIMEDOUT') return 'Linux.do 连接超时，请稍后重试'
   if (error?.code === 'EAI_AGAIN') return 'Linux.do 域名解析失败，请稍后重试'
@@ -522,7 +526,9 @@ function getLinuxdoErrorMessage(error) {
 function logLinuxdoCallbackError(error) {
   const responseData = error?.response?.data
   console.error('Linux.do callback failed', {
+    step: error?.linuxdoStep,
     status: error?.response?.status,
+    code: error?.code,
     message: error?.message,
     response: responseData,
   })
