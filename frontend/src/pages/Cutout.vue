@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import AppLayout from '../layouts/AppLayout.vue'
+import { userTokenStorageKey } from '../api/request'
 
 const fileInput = ref(null)
 const selectedFile = ref(null)
@@ -12,7 +13,7 @@ const isCaptchaReady = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 
-const canSubmit = computed(() => selectedFile.value && !isLoading.value)
+const canSubmit = computed(() => Boolean(selectedFile.value) && !isLoading.value)
 const fileMeta = computed(() => {
   if (!selectedFile.value) return ''
 
@@ -47,6 +48,7 @@ function setFile(file) {
 
 function handleFileChange(event) {
   setFile(event.target.files?.[0])
+  event.target.value = ''
 }
 
 function handleDrop(event) {
@@ -74,8 +76,10 @@ async function submitCutout() {
     formData.append('image', selectedFile.value)
     formData.append('captchacode', captchaCode)
 
+    const token = localStorage.getItem(userTokenStorageKey) || ''
     const response = await fetch('/api/cutout', {
       method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       body: formData,
     })
 
@@ -128,7 +132,7 @@ function loadCaptchaScript() {
       reject(new Error('行为码脚本加载超时，请刷新页面后重试。'))
     }, 10000)
 
-    script.src = '/captcha/reCAPTCHA.js'
+    script.src = '/wasm/reCAPTCHA.js'
     script.async = true
     script.dataset.captchaScript = 'recaptcha'
     script.addEventListener('load', () => {

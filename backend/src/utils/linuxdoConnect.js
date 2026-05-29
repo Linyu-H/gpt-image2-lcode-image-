@@ -5,8 +5,13 @@ import { getLinuxdoConfig } from '../services/linuxdoConnectService.js'
 const AUTH_URL = 'https://connect.linux.do/oauth2/authorize'
 const TOKEN_URL = 'https://connect.linux.do/oauth2/token'
 const USER_INFO_URL = 'https://connect.linux.do/api/user'
-const REQUEST_TIMEOUT_MS = 15000
-const linuxdoHttpsAgent = new https.Agent({ family: 4 })
+const REQUEST_TIMEOUT_MS = 30000
+const REQUEST_RETRY_DELAY_MS = 800
+const REQUEST_RETRY_TIMES = 3
+const linuxdoHttpsAgent = new https.Agent({
+  family: 4,
+  keepAlive: false,
+})
 const TRANSIENT_ERROR_CODES = new Set(['ECONNRESET', 'ECONNABORTED', 'ETIMEDOUT', 'EAI_AGAIN'])
 
 function withStep(error, step) {
@@ -14,13 +19,24 @@ function withStep(error, step) {
   throw error
 }
 
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 async function requestWithRetry(request) {
-  try {
-    return await request()
-  } catch (error) {
-    if (!TRANSIENT_ERROR_CODES.has(error?.code)) throw error
-    return request()
+  let lastError
+
+  for (let attempt = 0; attempt < REQUEST_RETRY_TIMES; attempt += 1) {
+    try {
+      return await request()
+    } catch (error) {
+      lastError = error
+      if (!TRANSIENT_ERROR_CODES.has(error?.code) || attempt === REQUEST_RETRY_TIMES - 1) throw error
+      await delay(REQUEST_RETRY_DELAY_MS * (attempt + 1))
+    }
   }
+
+  throw lastError
 }
 
 function requireConfig() {
