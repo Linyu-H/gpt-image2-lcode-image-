@@ -102,6 +102,33 @@ function downloadResult() {
 }
 
 let cleanupInteractionTracking = () => {}
+let captchaScriptLoadPromise = null
+
+function loadCaptchaScript() {
+  if (window.leshemModule?.ccall) return Promise.resolve()
+  if (captchaScriptLoadPromise) return captchaScriptLoadPromise
+
+  const existingScript = document.querySelector('script[data-captcha-script="recaptcha"]')
+  if (existingScript) {
+    captchaScriptLoadPromise = new Promise((resolve, reject) => {
+      existingScript.addEventListener('load', resolve, { once: true })
+      existingScript.addEventListener('error', reject, { once: true })
+    })
+    return captchaScriptLoadPromise
+  }
+
+  captchaScriptLoadPromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script')
+    script.src = '/wasm/reCAPTCHA.js'
+    script.async = true
+    script.dataset.captchaScript = 'recaptcha'
+    script.addEventListener('load', resolve, { once: true })
+    script.addEventListener('error', () => reject(new Error('行为码脚本加载失败，请刷新页面后重试。')), { once: true })
+    document.head.appendChild(script)
+  })
+
+  return captchaScriptLoadPromise
+}
 
 function getCaptchaCode() {
   return window.leshemModule?.ccall?.('get_code', 'string', [], []) || ''
@@ -139,6 +166,10 @@ function recordMouseEvent(type, event) {
 }
 
 onMounted(() => {
+  loadCaptchaScript().catch((error) => {
+    errorMessage.value = error.message || '行为码脚本加载失败，请刷新页面后重试。'
+  })
+
   const stopBrowserTimer = recordBrowserInfo()
   const move = (event) => recordMouseEvent(1, event)
   const down = (event) => recordMouseEvent(2, event)
