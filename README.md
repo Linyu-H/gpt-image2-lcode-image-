@@ -495,6 +495,8 @@ npm run dev
 npm run start
 ```
 
+## 最后，我的服务器应该是被L站封IP了，本人也不确定现在是否是打通了oauth单点，代码上看的话是没有问题的，待测试。
+
 ## License
 
 MIT
