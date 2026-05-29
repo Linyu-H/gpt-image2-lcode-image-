@@ -146,7 +146,14 @@ async function linuxdoLogin() {
   linuxdoLoading.value = true
   error.value = ''
   try {
-    const { url } = await startLinuxdoAuthorize('/create')
+    if (isRegisterMode.value && registerPolicy.value.requireInviteCode && !inviteCode.value.trim()) {
+      throw new Error('当前 Linux.do 注册需要邀请码')
+    }
+
+    const { url } = await startLinuxdoAuthorize({
+      returnTo: '/create',
+      inviteCode: inviteCode.value,
+    })
     if (!url) throw new Error('未获取到 Linux.do 授权地址')
     window.location.href = url
   } catch (err) {

@@ -419,9 +419,13 @@ export function confirmAvatar(req, res) {
 const linuxdoStateStore = new Map()
 const LINUXDO_STATE_TTL_MS = 10 * 60 * 1000
 
-function issueLinuxdoState(returnTo) {
+function issueLinuxdoState(returnTo, inviteCode = '') {
   const state = crypto.randomBytes(16).toString('hex')
-  linuxdoStateStore.set(state, { returnTo: returnTo || '/create', createdAt: Date.now() })
+  linuxdoStateStore.set(state, {
+    returnTo: returnTo || '/create',
+    inviteCode: String(inviteCode || '').trim(),
+    createdAt: Date.now(),
+  })
   return state
 }
 
@@ -448,7 +452,7 @@ function buildUniqueUsername(preferred) {
   return `${base}_${pickRandomSuffix()}`
 }
 
-function upsertLinuxdoUser(profile) {
+function upsertLinuxdoUser(profile, options = {}) {
   const linuxdoUserId = Number(profile?.id)
   if (!Number.isFinite(linuxdoUserId) || linuxdoUserId <= 0) {
     const error = new Error('Linux.do 返回的用户信息缺少 id')
@@ -469,6 +473,20 @@ function upsertLinuxdoUser(profile) {
     }
   }
 
+  const policy = readRegisterPolicy()
+  if (!policy.allowRegister) {
+    const error = new Error('当前暂停新用户注册')
+    error.status = 403
+    throw error
+  }
+
+  const inviteCode = String(options.inviteCode || '').trim()
+  if (policy.requireInviteCode && !inviteCode) {
+    const error = new Error('当前 Linux.do 注册需要邀请码')
+    error.status = 400
+    throw error
+  }
+
   const username = buildUniqueUsername(profile?.username || profile?.name)
   const email = linkEmail || `linuxdo_${linuxdoUserId}@connect.linux.do`
   const userId = uuidv4()
@@ -480,6 +498,9 @@ function upsertLinuxdoUser(profile) {
       INSERT INTO users (id, username, email, email_verified, password_hash, linuxdo_user_id, created_at, updated_at)
       VALUES (?, ?, ?, 1, ?, ?, ?, ?)
     `).run(userId, username, email, passwordHash, linuxdoUserId, timestamp, timestamp)
+    if (policy.requireInviteCode) {
+      consumeInviteCode(inviteCode, userId, email)
+    }
     ensureProfile(userId)
   })
   runCreate()
@@ -487,10 +508,28 @@ function upsertLinuxdoUser(profile) {
   return db.prepare('SELECT * FROM users WHERE id = ?').get(userId)
 }
 
+function getLinuxdoErrorMessage(error) {
+  return error?.response?.data?.error_description
+    || error?.response?.data?.message
+    || error?.response?.data?.error
+    || error?.message
+    || 'Linux.do 登录失败'
+}
+
+function logLinuxdoCallbackError(error) {
+  const responseData = error?.response?.data
+  console.error('Linux.do callback failed', {
+    status: error?.response?.status,
+    message: error?.message,
+    response: responseData,
+  })
+}
+
 export function linuxdoAuthorize(req, res) {
   try {
-    const returnTo = String(req.query?.returnTo || '/create')
-    const state = issueLinuxdoState(returnTo)
+    const returnTo = String(req.body?.returnTo || req.query?.returnTo || '/create')
+    const inviteCode = String(req.body?.inviteCode || '').trim()
+    const state = issueLinuxdoState(returnTo, inviteCode)
     const url = buildAuthUrl(state)
     res.json({ url })
   } catch (error) {
@@ -521,7 +560,7 @@ export async function linuxdoCallback(req, res) {
     if (!accessToken) return fail('未获取到访问令牌')
 
     const profile = await fetchLinuxdoUser(accessToken)
-    const user = upsertLinuxdoUser(profile)
+    const user = upsertLinuxdoUser(profile, { inviteCode: record.inviteCode })
 
     if (user.is_banned) return fail('该账号已被封禁')
 
@@ -529,7 +568,7 @@ export async function linuxdoCallback(req, res) {
     const returnTo = encodeURIComponent(record.returnTo || '/create')
     res.redirect(`${frontendBase}/oauth/linuxdo/callback?token=${encodeURIComponent(jwtToken)}&returnTo=${returnTo}`)
   } catch (error) {
-    const message = error?.response?.data?.error_description || error?.message || 'Linux.do 登录失败'
-    return fail(message)
+    logLinuxdoCallbackError(error)
+    return fail(getLinuxdoErrorMessage(error))
   }
 }
