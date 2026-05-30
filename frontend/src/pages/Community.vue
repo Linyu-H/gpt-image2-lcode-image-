@@ -16,6 +16,8 @@ async function loadFeed() {
   loading.value = true
   try {
     posts.value = await fetchCommunityFeed()
+  } catch (error) {
+    toastStore.error(error.response?.data?.message || '社区内容加载失败')
   } finally {
     loading.value = false
   }

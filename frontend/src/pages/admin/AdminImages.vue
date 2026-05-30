@@ -6,6 +6,7 @@ import { clearAllAdminImages, deleteAdminImage, fetchAdminImages } from '../../a
 import { useI18nStore } from '../../stores/i18n'
 import { useToastStore } from '../../stores/toast'
 import { formatDateTime } from '../../utils/datetime'
+import { extractErrorMessage } from '../../utils/errors'
 
 const i18n = useI18nStore()
 const toastStore = useToastStore()
@@ -25,24 +26,36 @@ function normalizeCurrentPage() {
 }
 
 async function loadImages() {
-  images.value = await fetchAdminImages()
-  normalizeCurrentPage()
+  try {
+    images.value = await fetchAdminImages()
+    normalizeCurrentPage()
+  } catch (error) {
+    toastStore.error(extractErrorMessage(error, '加载图片列表失败'))
+  }
 }
 
 async function deleteAdminImageAction(image) {
   if (!window.confirm(i18n.t('confirmDeleteImage'))) return
 
-  const result = await deleteAdminImage(image.id)
-  toastStore.success(result.message)
-  await loadImages()
+  try {
+    const result = await deleteAdminImage(image.id)
+    toastStore.success(result.message)
+    await loadImages()
+  } catch (error) {
+    toastStore.error(extractErrorMessage(error, '图片删除失败'))
+  }
 }
 
 async function clearAllAdminImagesAction() {
   if (!window.confirm(i18n.t('confirmClearImages'))) return
 
-  const result = await clearAllAdminImages()
-  toastStore.success(result.message)
-  await loadImages()
+  try {
+    const result = await clearAllAdminImages()
+    toastStore.success(result.message)
+    await loadImages()
+  } catch (error) {
+    toastStore.error(extractErrorMessage(error, '清空图片失败'))
+  }
 }
 
 onMounted(async () => {

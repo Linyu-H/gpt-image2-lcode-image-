@@ -10,8 +10,11 @@ import {
 } from '../api/auth'
 import { useUserStore } from '../stores/user'
 import { useI18nStore } from '../stores/i18n'
+import { useToastStore } from '../stores/toast'
+import { extractErrorMessage } from '../utils/errors'
 
 const i18n = useI18nStore()
+const toastStore = useToastStore()
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -80,29 +83,48 @@ async function loadRegisterPolicy() {
 }
 
 async function submit() {
+  if (loading.value) return
+  if (mode.value === 'login') {
+    if (!username.value.trim() || !password.value) {
+      const tip = '请输入用户名和密码'
+      error.value = tip
+      toastStore.error(tip)
+      return
+    }
+  }
   loading.value = true
   error.value = ''
 
   try {
     if (mode.value === 'login') {
       await userStore.login(username.value, password.value)
+      toastStore.success('登录成功')
       router.push('/create')
       return
     }
 
     if (mode.value === 'forgot') {
+      if (!email.value.trim() || !emailCode.value.trim() || !password.value) {
+        throw new Error('请填写邮箱、验证码和新密码')
+      }
       await resetPasswordWithEmailCode({
         email: email.value,
         emailCode: emailCode.value,
         password: password.value,
       })
       switchMode('login')
-      error.value = i18n.t('passwordResetDone')
+      const done = i18n.t('passwordResetDone')
+      error.value = done
+      toastStore.success(done)
       return
     }
 
     if (!registerPolicy.value.allowRegister) {
       throw new Error(i18n.t('registrationPaused'))
+    }
+
+    if (!username.value.trim() || !email.value.trim() || !emailCode.value.trim() || !password.value) {
+      throw new Error('请完整填写注册信息')
     }
 
     await userStore.register({
@@ -112,9 +134,12 @@ async function submit() {
       inviteCode: inviteCode.value,
       password: password.value,
     })
+    toastStore.success('注册成功')
     router.push('/create')
   } catch (err) {
-    error.value = err?.response?.data?.message || err?.message || i18n.t('submitFailed')
+    const message = extractErrorMessage(err, i18n.t('submitFailed'))
+    error.value = message
+    toastStore.error(message)
   } finally {
     loading.value = false
   }
@@ -122,6 +147,12 @@ async function submit() {
 
 async function sendCode() {
   if (sendingCode.value || countdown.value > 0) return
+  if (!email.value.trim()) {
+    const tip = '请先填写邮箱'
+    error.value = tip
+    toastStore.error(tip)
+    return
+  }
   sendingCode.value = true
   error.value = ''
 
@@ -131,9 +162,12 @@ async function sendCode() {
     } else {
       await sendRegisterEmailCode({ receiveEmail: email.value, bizType: 'register' })
     }
+    toastStore.success('验证码已发送，请查收邮箱')
     startCountdown()
   } catch (err) {
-    error.value = err?.response?.data?.message || i18n.t('codeFailed')
+    const message = extractErrorMessage(err, i18n.t('codeFailed'))
+    error.value = message
+    toastStore.error(message)
   } finally {
     sendingCode.value = false
   }
@@ -157,7 +191,9 @@ async function linuxdoLogin() {
     if (!url) throw new Error('未获取到 Linux.do 授权地址')
     window.location.href = url
   } catch (err) {
-    error.value = err?.response?.data?.message || err?.message || '无法跳转 Linux.do 授权'
+    const message = extractErrorMessage(err, '无法跳转 Linux.do 授权')
+    error.value = message
+    toastStore.error(message)
     linuxdoLoading.value = false
   }
 }

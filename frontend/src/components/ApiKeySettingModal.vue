@@ -4,6 +4,7 @@ import { saveUserProfile, testUserProfile } from '../api/auth'
 import { useChatStore } from '../stores/chat'
 import { useToastStore } from '../stores/toast'
 import { useUserStore } from '../stores/user'
+import { extractErrorMessage } from '../utils/errors'
 
 const props = defineProps({
   open: {
@@ -48,9 +49,13 @@ async function runTest() {
     message.value = result.ok ? '个人配置可用' : '个人配置不可用'
     if (result.ok) {
       toastStore.success('个人配置测试通过')
+    } else {
+      toastStore.error('个人配置不可用，请检查 API 地址和身份令牌')
     }
   } catch (error) {
-    message.value = error?.response?.data?.message || '测试失败，请稍后重试'
+    const nextMessage = extractErrorMessage(error, '测试失败，请稍后重试')
+    message.value = nextMessage
+    toastStore.error(nextMessage)
   } finally {
     testing.value = false
   }
@@ -77,7 +82,9 @@ async function save() {
     toastStore.success('个人配置已保存')
     emit('close')
   } catch (error) {
-    message.value = error?.response?.data?.message || '保存失败，请稍后重试'
+    const nextMessage = extractErrorMessage(error, '保存失败，请稍后重试')
+    message.value = nextMessage
+    toastStore.error(nextMessage)
   } finally {
     saving.value = false
   }

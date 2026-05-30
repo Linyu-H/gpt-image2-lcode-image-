@@ -11,6 +11,7 @@ import { useAdminStore } from '../../stores/admin'
 import { useToastStore } from '../../stores/toast'
 import { useI18nStore } from '../../stores/i18n'
 import { formatDateTime } from '../../utils/datetime'
+import { extractErrorMessage } from '../../utils/errors'
 
 const adminStore = useAdminStore()
 const toastStore = useToastStore()
@@ -28,16 +29,24 @@ const passwordSaving = ref(false)
 const mustChangePassword = ref(false)
 
 async function loadData() {
-  const nextStatus = await fetchAdminStatus()
-  status.value = nextStatus
-  mustChangePassword.value = nextStatus.mustChangePassword === true || adminStore.mustChangePassword === true
+  try {
+    const nextStatus = await fetchAdminStatus()
+    status.value = nextStatus
+    mustChangePassword.value = nextStatus.mustChangePassword === true || adminStore.mustChangePassword === true
 
-  if (mustChangePassword.value) return
+    if (mustChangePassword.value) return
 
-  statistics.value = await fetchStatistics()
+    statistics.value = await fetchStatistics()
+  } catch (error) {
+    toastStore.error(extractErrorMessage(error, '加载控制台数据失败'))
+  }
 }
 
 async function submitPasswordChange() {
+  if (!passwordForm.currentPassword) {
+    toastStore.error('请填写当前密码')
+    return
+  }
   if (passwordForm.newPassword.length < 6) {
     toastStore.error('新密码至少需要 6 个字符')
     return
@@ -60,6 +69,8 @@ async function submitPasswordChange() {
     adminStore.markMustChangePassword(false)
     toastStore.success('管理员密码修改成功')
     await loadData()
+  } catch (error) {
+    toastStore.error(extractErrorMessage(error, '密码修改失败，请检查当前密码是否正确'))
   } finally {
     passwordSaving.value = false
   }

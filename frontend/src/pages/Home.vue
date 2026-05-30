@@ -52,21 +52,27 @@ function startNewConversation() {
 <template>
   <AppLayout immersive>
     <div class="chat-workspace" :class="{ 'history-open': sidebarOpen }">
-      <button class="history-toggle" type="button" :class="{ active: sidebarOpen }" :aria-label="sidebarOpen ? '收起历史栏' : '打开历史栏'" @click="toggleSidebar">
-        <svg v-if="!sidebarOpen" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <path d="M4 6h16" />
-          <path d="M4 12h16" />
-          <path d="M4 18h16" />
-        </svg>
-        <svg v-else width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <path d="M18 6 6 18" />
-          <path d="m6 6 12 12" />
-        </svg>
-      </button>
+      <div class="toggle-rail">
+        <button class="history-toggle" type="button" :class="{ active: sidebarOpen }" :aria-label="sidebarOpen ? '收起历史栏' : '打开历史栏'" :aria-expanded="sidebarOpen" @click="toggleSidebar">
+          <Transition name="toggle-icon" mode="out-in">
+            <svg v-if="!sidebarOpen" key="menu" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M4 6h16" />
+              <path d="M4 12h16" />
+              <path d="M4 18h16" />
+            </svg>
+            <svg v-else key="close" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
+          </Transition>
+        </button>
+      </div>
 
-      <div v-if="sidebarOpen" class="history-scrim" @click="sidebarOpen = false" />
+      <Transition name="scrim">
+        <div v-if="sidebarOpen" class="history-scrim" @click="sidebarOpen = false" />
+      </Transition>
 
-      <aside v-if="sidebarOpen" class="history-drawer" aria-label="图片生成历史">
+      <aside class="history-drawer" :class="{ 'is-closed': !sidebarOpen }" :aria-hidden="!sidebarOpen" aria-label="图片生成历史">
         <div class="drawer-brand">
           <div class="drawer-logo">AI</div>
           <div>
@@ -80,7 +86,7 @@ function startNewConversation() {
             <path d="M12 5v14" />
             <path d="M5 12h14" />
           </svg>
-          <span>新建创作</span>
+          <span>清空历史</span>
         </button>
 
         <SidebarHistory :items="chatStore.combinedHistory" @select="reusePrompt" />
@@ -109,22 +115,30 @@ function startNewConversation() {
 
 <style scoped>
 .chat-workspace {
+  --rail-width: 56px;
+  --drawer-width: 0px;
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: var(--rail-width) var(--drawer-width) minmax(0, 1fr);
   gap: 16px;
   min-height: calc(100dvh - 112px);
+  transition: grid-template-columns 320ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .chat-workspace.history-open {
-  grid-template-columns: 292px minmax(0, 1fr);
+  --drawer-width: 292px;
+}
+
+.toggle-rail {
+  position: sticky;
+  top: 108px;
+  align-self: start;
+  display: flex;
+  justify-content: center;
+  padding-top: 6px;
 }
 
 .history-toggle {
-  position: absolute;
-  top: 18px;
-  left: 18px;
-  z-index: 35;
   width: 44px;
   height: 44px;
   display: inline-flex;
@@ -138,10 +152,6 @@ function startNewConversation() {
   transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
 }
 
-.chat-workspace.history-open .history-toggle {
-  left: 308px;
-}
-
 .history-toggle:hover,
 .history-toggle.active {
   color: var(--color-primary);
@@ -151,6 +161,35 @@ function startNewConversation() {
 
 .history-toggle:hover {
   transform: translateY(-1px);
+}
+
+.history-toggle:active {
+  transform: scale(0.96);
+}
+
+.toggle-icon-enter-active,
+.toggle-icon-leave-active {
+  transition: opacity 180ms ease, transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.toggle-icon-enter-from {
+  opacity: 0;
+  transform: rotate(-45deg) scale(0.8);
+}
+
+.toggle-icon-leave-to {
+  opacity: 0;
+  transform: rotate(45deg) scale(0.8);
+}
+
+.scrim-enter-active,
+.scrim-leave-active {
+  transition: opacity 240ms ease;
+}
+
+.scrim-enter-from,
+.scrim-leave-to {
+  opacity: 0;
 }
 
 .history-drawer {
@@ -169,6 +208,18 @@ function startNewConversation() {
   background: linear-gradient(180deg, var(--color-card-strong), var(--color-card));
   box-shadow: var(--shadow-card);
   backdrop-filter: var(--backdrop-blur);
+  transform-origin: left center;
+  transition:
+    opacity 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 280ms ease;
+}
+
+.history-drawer.is-closed {
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(-12px) scale(0.97);
+  box-shadow: none;
 }
 
 .drawer-brand {
@@ -246,11 +297,7 @@ function startNewConversation() {
 
 @media (max-width: 1024px) {
   .chat-workspace.history-open {
-    grid-template-columns: 270px minmax(0, 1fr);
-  }
-
-  .chat-workspace.history-open .history-toggle {
-    left: 286px;
+    --drawer-width: 270px;
   }
 
   .history-drawer {
@@ -265,12 +312,12 @@ function startNewConversation() {
     min-height: calc(100dvh - 96px);
   }
 
-  .history-toggle,
-  .chat-workspace.history-open .history-toggle {
+  .toggle-rail {
     position: fixed;
     top: 96px;
     left: 18px;
     z-index: 80;
+    padding: 0;
   }
 
   .history-scrim {
@@ -291,10 +338,30 @@ function startNewConversation() {
     width: min(320px, calc(100vw - 24px));
     height: auto;
     min-height: 0;
+    transform-origin: left center;
+  }
+
+  .history-drawer.is-closed {
+    transform: translateX(-110%);
   }
 
   .chat-canvas {
     min-height: calc(100dvh - 96px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-workspace,
+  .history-drawer,
+  .toggle-icon-enter-active,
+  .toggle-icon-leave-active,
+  .scrim-enter-active,
+  .scrim-leave-active {
+    transition: none;
+  }
+
+  .history-drawer.is-closed {
+    transform: none;
   }
 }
 </style>

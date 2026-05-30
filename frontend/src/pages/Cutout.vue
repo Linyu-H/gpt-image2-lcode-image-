@@ -2,6 +2,9 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import AppLayout from '../layouts/AppLayout.vue'
 import { userTokenStorageKey } from '../api/request'
+import { useToastStore } from '../stores/toast'
+
+const toastStore = useToastStore()
 
 const fileInput = ref(null)
 const selectedFile = ref(null)
@@ -35,7 +38,9 @@ function setFile(file) {
   if (!file) return
 
   if (!file.type.startsWith('image/')) {
-    errorMessage.value = '请选择 PNG、JPG、WebP 等图片文件。'
+    const tip = '请选择 PNG、JPG、WebP 等图片文件。'
+    errorMessage.value = tip
+    toastStore.error(tip)
     return
   }
 
@@ -91,8 +96,11 @@ async function submitCutout() {
     const blob = await response.blob()
     resultUrl.value = URL.createObjectURL(blob)
     successMessage.value = '抠图完成，可以预览或下载结果。'
+    toastStore.success('抠图完成')
   } catch (error) {
-    errorMessage.value = error.message || '抠图请求失败，请检查代理服务和上游接口配置。'
+    const tip = error.message || '抠图请求失败，请检查代理服务和上游接口配置。'
+    errorMessage.value = tip
+    toastStore.error(tip)
   } finally {
     isLoading.value = false
   }
@@ -211,7 +219,9 @@ function recordMouseEvent(type, event) {
 
 onMounted(() => {
   loadCaptchaScript().catch((error) => {
-    errorMessage.value = error.message || '行为码脚本加载失败，请刷新页面后重试。'
+    const tip = error.message || '行为码脚本加载失败，请刷新页面后重试。'
+    errorMessage.value = tip
+    toastStore.error(tip)
   })
 
   const stopBrowserTimer = recordBrowserInfo()

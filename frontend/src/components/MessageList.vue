@@ -195,7 +195,15 @@ const emit = defineEmits(['delete', 'reuse'])
 }
 
 .message-enter {
-  animation: message-enter 220ms ease-out;
+  animation: message-enter 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.assistant-row.message-enter {
+  animation-name: message-enter-left;
+}
+
+.user-row.message-enter {
+  animation-name: message-enter-right;
 }
 
 @keyframes dot-pulse {
@@ -214,11 +222,33 @@ const emit = defineEmits(['delete', 'reuse'])
 @keyframes message-enter {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes message-enter-left {
+  from {
+    opacity: 0;
+    transform: translate3d(-10px, 8px, 0) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes message-enter-right {
+  from {
+    opacity: 0;
+    transform: translate3d(10px, 8px, 0) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
   }
 }
 

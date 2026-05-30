@@ -25,6 +25,7 @@ import { useAdminStore } from '../../stores/admin'
 import { useToastStore } from '../../stores/toast'
 import { useI18nStore } from '../../stores/i18n'
 import { formatDateTime } from '../../utils/datetime'
+import { extractErrorMessage } from '../../utils/errors'
 
 const adminStore = useAdminStore()
 const toastStore = useToastStore()
@@ -63,69 +64,91 @@ const loading = ref(false)
 const mustChangePassword = ref(false)
 
 async function loadData() {
-  const nextStatus = await fetchAdminStatus()
-  status.value = nextStatus
-  mustChangePassword.value = nextStatus.mustChangePassword === true || adminStore.mustChangePassword === true
-  form.token = nextStatus.sharedToken || ''
-  form.imageApiBaseUrl = nextStatus.imageApiBaseUrl || ''
-  form.siteBaseUrl = nextStatus.siteBaseUrl || ''
-  form.emailAuthUser = nextStatus.emailAuthUser || ''
-  form.emailAuthPass = ''
-  form.allowRegister = nextStatus.allowRegister !== false
-  form.requireInviteCode = nextStatus.requireInviteCode === true
-  form.dailyLimit = nextStatus.dailyLimit
-  form.cleanupCron = nextStatus.cleanupCron
+  try {
+    const nextStatus = await fetchAdminStatus()
+    status.value = nextStatus
+    mustChangePassword.value = nextStatus.mustChangePassword === true || adminStore.mustChangePassword === true
+    form.token = nextStatus.sharedToken || ''
+    form.imageApiBaseUrl = nextStatus.imageApiBaseUrl || ''
+    form.siteBaseUrl = nextStatus.siteBaseUrl || ''
+    form.emailAuthUser = nextStatus.emailAuthUser || ''
+    form.emailAuthPass = ''
+    form.allowRegister = nextStatus.allowRegister !== false
+    form.requireInviteCode = nextStatus.requireInviteCode === true
+    form.dailyLimit = nextStatus.dailyLimit
+    form.cleanupCron = nextStatus.cleanupCron
 
-  const announcement = await fetchAnnouncementConfig()
-  announcementForm.title = announcement.title || ''
-  announcementForm.content = announcement.content || ''
-  announcementForm.isEnabled = announcement.isEnabled === true
+    const announcement = await fetchAnnouncementConfig()
+    announcementForm.title = announcement.title || ''
+    announcementForm.content = announcement.content || ''
+    announcementForm.isEnabled = announcement.isEnabled === true
 
-  const linuxdo = await fetchLinuxdoSetting()
-  linuxdoStatus.value = linuxdo
-  linuxdoForm.clientId = linuxdo.clientId || ''
-  linuxdoForm.clientSecret = linuxdo.clientSecret || ''
-  linuxdoForm.redirectUrl = linuxdo.redirectUrl || ''
+    const linuxdo = await fetchLinuxdoSetting()
+    linuxdoStatus.value = linuxdo
+    linuxdoForm.clientId = linuxdo.clientId || ''
+    linuxdoForm.clientSecret = linuxdo.clientSecret || ''
+    linuxdoForm.redirectUrl = linuxdo.redirectUrl || ''
 
-  if (mustChangePassword.value) return
+    if (mustChangePassword.value) return
 
-  const [nextFeaturedPrompts, nextInviteCodes] = await Promise.all([
-    fetchFeaturedPrompts(),
-    fetchInviteCodes(),
-  ])
-  featuredPrompts.value = nextFeaturedPrompts
-  inviteCodes.value = nextInviteCodes
+    const [nextFeaturedPrompts, nextInviteCodes] = await Promise.all([
+      fetchFeaturedPrompts(),
+      fetchInviteCodes(),
+    ])
+    featuredPrompts.value = nextFeaturedPrompts
+    inviteCodes.value = nextInviteCodes
+  } catch (error) {
+    toastStore.error(extractErrorMessage(error, '加载管理员配置失败'))
+  }
 }
 
 async function saveUpstreamAction() {
-  await saveUpstreamConfig({
-    accessToken: form.token,
-    imageApiBaseUrl: form.imageApiBaseUrl,
-    siteBaseUrl: form.siteBaseUrl,
-  })
-  message.value = '上游配置已保存'
-  toastStore.success('上游配置已保存')
-  await loadData()
+  try {
+    await saveUpstreamConfig({
+      accessToken: form.token,
+      imageApiBaseUrl: form.imageApiBaseUrl,
+      siteBaseUrl: form.siteBaseUrl,
+    })
+    message.value = '上游配置已保存'
+    toastStore.success('上游配置已保存')
+    await loadData()
+  } catch (error) {
+    const nextMessage = extractErrorMessage(error, '上游配置保存失败')
+    message.value = nextMessage
+    toastStore.error(nextMessage)
+  }
 }
 
 async function saveEmailServiceAction() {
-  await saveEmailServiceConfig({
-    authUser: form.emailAuthUser,
-    authPass: form.emailAuthPass,
-  })
-  message.value = '邮箱服务配置已保存'
-  toastStore.success('邮箱服务配置已保存')
-  await loadData()
+  try {
+    await saveEmailServiceConfig({
+      authUser: form.emailAuthUser,
+      authPass: form.emailAuthPass,
+    })
+    message.value = '邮箱服务配置已保存'
+    toastStore.success('邮箱服务配置已保存')
+    await loadData()
+  } catch (error) {
+    const nextMessage = extractErrorMessage(error, '邮箱服务配置保存失败')
+    message.value = nextMessage
+    toastStore.error(nextMessage)
+  }
 }
 
 async function saveRegisterPolicyAction() {
-  await saveRegisterPolicy({
-    allowRegister: form.allowRegister,
-    requireInviteCode: form.requireInviteCode,
-  })
-  message.value = '注册策略已保存'
-  toastStore.success('注册策略已保存')
-  await loadData()
+  try {
+    await saveRegisterPolicy({
+      allowRegister: form.allowRegister,
+      requireInviteCode: form.requireInviteCode,
+    })
+    message.value = '注册策略已保存'
+    toastStore.success('注册策略已保存')
+    await loadData()
+  } catch (error) {
+    const nextMessage = extractErrorMessage(error, '注册策略保存失败')
+    message.value = nextMessage
+    toastStore.error(nextMessage)
+  }
 }
 
 async function testUpstreamAction() {
@@ -137,42 +160,66 @@ async function testUpstreamAction() {
     message.value = '上游 API 可用'
     toastStore.success('上游 API 可用')
   } catch (error) {
-    const nextMessage = error.response?.data?.message || '上游连通性测试失败'
+    const nextMessage = extractErrorMessage(error, '上游连通性测试失败')
     message.value = nextMessage
     toastStore.error(nextMessage)
   }
 }
 
 async function saveLimitAction() {
-  await saveDailyLimit(form.dailyLimit)
-  message.value = '每日限流已更新'
-  toastStore.success('每日限流已更新')
-  await loadData()
+  try {
+    await saveDailyLimit(form.dailyLimit)
+    message.value = '每日限流已更新'
+    toastStore.success('每日限流已更新')
+    await loadData()
+  } catch (error) {
+    const nextMessage = extractErrorMessage(error, '每日限流保存失败')
+    message.value = nextMessage
+    toastStore.error(nextMessage)
+  }
 }
 
 async function saveCronAction() {
-  await saveCleanupCron(form.cleanupCron)
-  message.value = '清理周期已更新'
-  toastStore.success('清理周期已更新')
-  await loadData()
+  try {
+    await saveCleanupCron(form.cleanupCron)
+    message.value = '清理周期已更新'
+    toastStore.success('清理周期已更新')
+    await loadData()
+  } catch (error) {
+    const nextMessage = extractErrorMessage(error, '清理周期保存失败')
+    message.value = nextMessage
+    toastStore.error(nextMessage)
+  }
 }
 
 async function cleanExpiredAction() {
-  const result = await cleanExpiredImages()
-  message.value = `清理完成，共处理 ${result.cleaned} 条记录`
-  toastStore.success(`清理完成，共处理 ${result.cleaned} 条记录`)
-  await loadData()
+  try {
+    const result = await cleanExpiredImages()
+    message.value = `清理完成，共处理 ${result.cleaned} 条记录`
+    toastStore.success(`清理完成，共处理 ${result.cleaned} 条记录`)
+    await loadData()
+  } catch (error) {
+    const nextMessage = extractErrorMessage(error, '清理失败，请稍后重试')
+    message.value = nextMessage
+    toastStore.error(nextMessage)
+  }
 }
 
 async function saveAnnouncementAction() {
-  await saveAnnouncement({
-    title: announcementForm.title,
-    content: announcementForm.content,
-    isEnabled: announcementForm.isEnabled,
-  })
-  message.value = '网站公告已保存'
-  toastStore.success('网站公告已保存')
-  await loadData()
+  try {
+    await saveAnnouncement({
+      title: announcementForm.title,
+      content: announcementForm.content,
+      isEnabled: announcementForm.isEnabled,
+    })
+    message.value = '网站公告已保存'
+    toastStore.success('网站公告已保存')
+    await loadData()
+  } catch (error) {
+    const nextMessage = extractErrorMessage(error, '网站公告保存失败')
+    message.value = nextMessage
+    toastStore.error(nextMessage)
+  }
 }
 
 async function saveLinuxdoAction() {
@@ -191,7 +238,7 @@ async function saveLinuxdoAction() {
     toastStore.success('Linux.do 接入配置已保存')
     await loadData()
   } catch (error) {
-    const nextMessage = error.response?.data?.message || 'Linux.do 配置保存失败'
+    const nextMessage = extractErrorMessage(error, 'Linux.do 配置保存失败')
     message.value = nextMessage
     toastStore.error(nextMessage)
   } finally {
@@ -200,25 +247,47 @@ async function saveLinuxdoAction() {
 }
 
 async function addFeaturedPromptAction() {
-  await createFeaturedPrompt(newFeaturedPrompt.value)
-  newFeaturedPrompt.value = ''
-  message.value = '示例灵感已添加'
-  toastStore.success('示例灵感已添加')
-  await loadData()
+  if (!newFeaturedPrompt.value.trim()) {
+    toastStore.error('请输入要添加的示例灵感')
+    return
+  }
+  try {
+    await createFeaturedPrompt(newFeaturedPrompt.value)
+    newFeaturedPrompt.value = ''
+    message.value = '示例灵感已添加'
+    toastStore.success('示例灵感已添加')
+    await loadData()
+  } catch (error) {
+    const nextMessage = extractErrorMessage(error, '示例灵感添加失败')
+    message.value = nextMessage
+    toastStore.error(nextMessage)
+  }
 }
 
 async function deleteFeaturedPromptAction(id) {
-  await deleteFeaturedPrompt(id)
-  message.value = '示例灵感已删除'
-  toastStore.success('示例灵感已删除')
-  await loadData()
+  try {
+    await deleteFeaturedPrompt(id)
+    message.value = '示例灵感已删除'
+    toastStore.success('示例灵感已删除')
+    await loadData()
+  } catch (error) {
+    const nextMessage = extractErrorMessage(error, '示例灵感删除失败')
+    message.value = nextMessage
+    toastStore.error(nextMessage)
+  }
 }
 
 async function generateInviteCodesAction() {
-  const result = await generateInviteCodes(form.inviteCodeCount)
-  message.value = result.message
-  toastStore.success(result.message)
-  await loadData()
+  try {
+    const result = await generateInviteCodes(form.inviteCodeCount)
+    message.value = result.message
+    toastStore.success(result.message)
+    await loadData()
+  } catch (error) {
+    const nextMessage = extractErrorMessage(error, '邀请码生成失败')
+    message.value = nextMessage
+    toastStore.error(nextMessage)
+  }
 }
 
 onMounted(async () => {

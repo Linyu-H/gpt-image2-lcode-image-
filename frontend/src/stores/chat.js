@@ -82,7 +82,12 @@ export const useChatStore = defineStore('chat', () => {
   }
 
   async function loadHistory() {
-    history.value = await fetchHistory()
+    try {
+      history.value = await fetchHistory()
+    } catch (error) {
+      const message = resolveErrorMessage(error)
+      toastStore.error(message)
+    }
   }
 
   function setSelectedFile(file) {
@@ -134,6 +139,7 @@ export const useChatStore = defineStore('chat', () => {
     } catch (error) {
       const message = resolveErrorMessage(error)
       errorMessage.value = message
+      toastStore.error(message)
       messages.value = messages.value.map((item) => item.id === pendingMessage.id
         ? {
             ...item,
@@ -148,9 +154,15 @@ export const useChatStore = defineStore('chat', () => {
   }
 
   async function deleteImage(id) {
-    await removeImageRequest(id)
-    messages.value = messages.value.filter((item) => item.id !== id)
-    history.value = history.value.filter((item) => item.id !== id)
+    try {
+      await removeImageRequest(id)
+      messages.value = messages.value.filter((item) => item.id !== id)
+      history.value = history.value.filter((item) => item.id !== id)
+      toastStore.success('已删除该图片')
+    } catch (error) {
+      toastStore.error(resolveErrorMessage(error))
+      throw error
+    }
   }
 
   function clearError() {

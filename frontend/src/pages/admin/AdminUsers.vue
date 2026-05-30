@@ -5,6 +5,7 @@ import AdminLayout from '../../layouts/AdminLayout.vue'
 import { fetchUsers, resetUserPassword, updateUserBanStatus } from '../../api/admin'
 import { useI18nStore } from '../../stores/i18n'
 import { useToastStore } from '../../stores/toast'
+import { extractErrorMessage } from '../../utils/errors'
 
 const i18n = useI18nStore()
 const toastStore = useToastStore()
@@ -27,8 +28,12 @@ function normalizeCurrentPage() {
 }
 
 async function loadUsers() {
-  users.value = await fetchUsers()
-  normalizeCurrentPage()
+  try {
+    users.value = await fetchUsers()
+    normalizeCurrentPage()
+  } catch (error) {
+    toastStore.error(extractErrorMessage(error, '加载用户列表失败'))
+  }
 }
 
 function canResetPassword(userId) {
@@ -37,7 +42,10 @@ function canResetPassword(userId) {
 
 async function resetUserPasswordAction(userId) {
   const password = (passwordDrafts[userId] || '').trim()
-  if (password.length < 6) return
+  if (password.length < 6) {
+    toastStore.error('新密码至少需要 6 个字符')
+    return
+  }
 
   resettingUsers[userId] = true
   try {
@@ -45,6 +53,8 @@ async function resetUserPasswordAction(userId) {
     passwordDrafts[userId] = ''
     toastStore.success(i18n.t('userPasswordReset'))
     await loadUsers()
+  } catch (error) {
+    toastStore.error(extractErrorMessage(error, '密码重置失败'))
   } finally {
     resettingUsers[userId] = false
   }
@@ -61,6 +71,8 @@ async function updateUserBanStatusAction(user) {
     const result = await updateUserBanStatus(user.id, nextIsBanned)
     toastStore.success(result.message)
     await loadUsers()
+  } catch (error) {
+    toastStore.error(extractErrorMessage(error, '操作失败，请稍后重试'))
   } finally {
     banningUsers[user.id] = false
   }

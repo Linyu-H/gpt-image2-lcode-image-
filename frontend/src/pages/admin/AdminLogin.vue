@@ -3,8 +3,11 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAdminStore } from '../../stores/admin'
 import { useI18nStore } from '../../stores/i18n'
+import { useToastStore } from '../../stores/toast'
+import { extractErrorMessage } from '../../utils/errors'
 
 const i18n = useI18nStore()
+const toastStore = useToastStore()
 
 const router = useRouter()
 const adminStore = useAdminStore()
@@ -14,13 +17,22 @@ const error = ref('')
 const loading = ref(false)
 
 async function submit() {
+  if (!username.value.trim() || !password.value) {
+    const tip = '请输入用户名和密码'
+    error.value = tip
+    toastStore.error(tip)
+    return
+  }
   loading.value = true
   error.value = ''
   try {
     await adminStore.login(username.value, password.value)
+    toastStore.success('登录成功')
     router.push('/admin')
   } catch (err) {
-    error.value = err.response?.data?.message || i18n.t('adminLoginFailed')
+    const message = extractErrorMessage(err, i18n.t('adminLoginFailed'))
+    error.value = message
+    toastStore.error(message)
   } finally {
     loading.value = false
   }

@@ -328,7 +328,7 @@ const promptChips = [
   .chat-topbar {
     top: -20px;
     margin: -20px -14px 20px;
-    padding: 18px 14px 14px 64px;
+    padding: 18px 14px 14px;
   }
 
   .account-chip {
