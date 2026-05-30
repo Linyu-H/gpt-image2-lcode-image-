@@ -8,7 +8,7 @@ defineProps({
   },
 })
 
-const emit = defineEmits(['delete', 'reuse'])
+const emit = defineEmits(['delete', 'reuse', 'retry-load'])
 </script>
 
 <template>
@@ -33,6 +33,14 @@ const emit = defineEmits(['delete', 'reuse'])
               <div>{{ item.errorMessage || '生成失败，请稍后重试。' }}</div>
               <div v-if="item.stale" class="message-hint">页面离开前这次请求的结果无法继续跟踪，你可以去历史记录查看是否已生成成功。</div>
               <div v-else class="message-hint">你可以换个描述，或者重新发送一次。</div>
+              <button
+                v-if="item.errorMessage?.includes('504') || item.errorMessage?.includes('超时')"
+                type="button"
+                class="retry-button"
+                @click="emit('retry-load', item)"
+              >
+                检查历史记录
+              </button>
             </template>
             <template v-else>
               <div class="message-title">正在生成图片</div>
@@ -188,6 +196,26 @@ const emit = defineEmits(['delete', 'reuse'])
 
 .message-loading-dots span:nth-child(3) {
   animation-delay: 0.32s;
+}
+
+.retry-button {
+  min-height: 36px;
+  margin-top: 12px;
+  padding: 0 16px;
+  border: 1px solid var(--color-primary);
+  border-radius: 12px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.retry-button:hover {
+  background: var(--color-primary);
+  color: #fff;
+  transform: translateY(-1px);
 }
 
 .image-stack {

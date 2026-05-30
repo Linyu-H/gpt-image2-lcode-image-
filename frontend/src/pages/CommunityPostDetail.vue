@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import AppLayout from '../layouts/AppLayout.vue'
+import ConfirmDialog from '../components/ConfirmDialog.vue'
 import { deleteCommunityPost, fetchCommunityPostDetail } from '../api/image'
 import { useToastStore } from '../stores/toast'
 import { useUserStore } from '../stores/user'
@@ -14,6 +15,7 @@ const userStore = useUserStore()
 const post = ref(null)
 const loading = ref(false)
 const missing = ref(false)
+const confirmDialogOpen = ref(false)
 
 const isOwner = computed(() => userStore.user?.id === post.value?.userId)
 
@@ -35,13 +37,12 @@ async function loadPost() {
 }
 
 async function removePost() {
-  if (!post.value) {
-    return
-  }
+  if (!post.value) return
+  confirmDialogOpen.value = true
+}
 
-  if (!window.confirm('确认删除这条帖子吗？')) {
-    return
-  }
+async function handleConfirmDelete() {
+  if (!post.value) return
 
   try {
     await deleteCommunityPost(post.value.id)
@@ -49,7 +50,13 @@ async function removePost() {
     router.push('/community')
   } catch (error) {
     toastStore.error(error.response?.data?.message || '帖子删除失败')
+  } finally {
+    confirmDialogOpen.value = false
   }
+}
+
+function handleCancelDelete() {
+  confirmDialogOpen.value = false
 }
 
 onMounted(loadPost)
@@ -103,6 +110,18 @@ onMounted(loadPost)
       </article>
       <div v-else class="detail-empty muted">帖子加载失败，请稍后重试。</div>
     </section>
+
+    <ConfirmDialog
+      :open="confirmDialogOpen"
+      title="删除帖子"
+      message="确认删除这条帖子吗？删除后无法恢复。"
+      confirm-text="删除"
+      cancel-text="取消"
+      danger
+      @confirm="handleConfirmDelete"
+      @cancel="handleCancelDelete"
+      @close="confirmDialogOpen = false"
+    />
   </AppLayout>
 </template>
 

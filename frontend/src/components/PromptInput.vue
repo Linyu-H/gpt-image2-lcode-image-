@@ -165,6 +165,107 @@ function onFileChange(event) {
       <button type="button" @click="emit('clear-file')">{{ i18n.t('clearImage') }}</button>
     </div>
 
+    <!-- 参数选择器 - 移到输入框上方 -->
+    <div class="composer-controls">
+      <div class="size-picker" :class="{ open: sizeMenuOpen }">
+        <button
+          type="button"
+          class="size-trigger"
+          :title="currentSize?.label"
+          @click="sizeMenuOpen = !sizeMenuOpen"
+        >
+          <span class="size-icon">{{ currentSize?.icon }}</span>
+          <span class="size-label">{{ currentSize?.label }}</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        </button>
+        <div v-if="sizeMenuOpen" class="size-menu" role="listbox">
+          <button
+            v-for="option in sizeOptions"
+            :key="option.value"
+            type="button"
+            class="size-option"
+            :class="{ active: option.value === imageSize }"
+            role="option"
+            :aria-selected="option.value === imageSize"
+            @click="pickSize(option.value)"
+          >
+            <span class="size-icon-large">{{ option.icon }}</span>
+            <strong>{{ option.label }}</strong>
+            <span v-if="option.value !== 'custom'" class="size-value">{{ option.value }}</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="quality-picker" :class="{ open: qualityMenuOpen }">
+        <button
+          type="button"
+          class="quality-trigger"
+          :title="currentQuality?.description"
+          @click="qualityMenuOpen = !qualityMenuOpen"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2Z" />
+          </svg>
+          <span class="quality-label">{{ currentQuality?.label }}</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        </button>
+        <div v-if="qualityMenuOpen" class="quality-menu" role="listbox">
+          <button
+            v-for="option in qualityOptions"
+            :key="option.value"
+            type="button"
+            class="quality-option"
+            :class="{ active: option.value === imageQuality }"
+            role="option"
+            :aria-selected="option.value === imageQuality"
+            @click="pickQuality(option.value)"
+          >
+            <strong>{{ option.label }}</strong>
+            <span>{{ option.description }}</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="source-picker" :class="{ open: sourceMenuOpen }">
+        <button
+          type="button"
+          class="source-trigger"
+          :title="currentOption?.description"
+          @click="sourceMenuOpen = !sourceMenuOpen"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M4 6h16" />
+            <path d="M4 12h10" />
+            <path d="M4 18h7" />
+            <path d="m17 14 4 4-4 4" />
+          </svg>
+          <span class="source-label">{{ currentOption?.label || '自动' }}</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        </button>
+        <div v-if="sourceMenuOpen" class="source-menu" role="listbox">
+          <button
+            v-for="option in sourceOptions"
+            :key="option.value"
+            type="button"
+            class="source-option"
+            :class="{ active: option.value === tokenSource }"
+            role="option"
+            :aria-selected="option.value === tokenSource"
+            @click="pickSource(option.value)"
+          >
+            <strong>{{ option.label }}</strong>
+            <span>{{ option.description }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div class="composer-shell">
       <textarea
         :value="modelValue"
@@ -176,104 +277,6 @@ function onFileChange(event) {
       />
 
       <div class="composer-actions">
-        <div class="size-picker" :class="{ open: sizeMenuOpen }">
-          <button
-            type="button"
-            class="size-trigger"
-            :title="currentSize?.label"
-            @click="sizeMenuOpen = !sizeMenuOpen"
-          >
-            <span class="size-icon">{{ currentSize?.icon }}</span>
-            <span class="size-label">{{ currentSize?.label }}</span>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <path d="m6 9 6 6 6-6" />
-            </svg>
-          </button>
-          <div v-if="sizeMenuOpen" class="size-menu" role="listbox">
-            <button
-              v-for="option in sizeOptions"
-              :key="option.value"
-              type="button"
-              class="size-option"
-              :class="{ active: option.value === imageSize }"
-              role="option"
-              :aria-selected="option.value === imageSize"
-              @click="pickSize(option.value)"
-            >
-              <span class="size-icon-large">{{ option.icon }}</span>
-              <strong>{{ option.label }}</strong>
-              <span class="size-value">{{ option.value }}</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="quality-picker" :class="{ open: qualityMenuOpen }">
-          <button
-            type="button"
-            class="quality-trigger"
-            :title="currentQuality?.description"
-            @click="qualityMenuOpen = !qualityMenuOpen"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <path d="M12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2Z" />
-            </svg>
-            <span class="quality-label">{{ currentQuality?.label }}</span>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <path d="m6 9 6 6 6-6" />
-            </svg>
-          </button>
-          <div v-if="qualityMenuOpen" class="quality-menu" role="listbox">
-            <button
-              v-for="option in qualityOptions"
-              :key="option.value"
-              type="button"
-              class="quality-option"
-              :class="{ active: option.value === imageQuality }"
-              role="option"
-              :aria-selected="option.value === imageQuality"
-              @click="pickQuality(option.value)"
-            >
-              <strong>{{ option.label }}</strong>
-              <span>{{ option.description }}</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="source-picker" :class="{ open: sourceMenuOpen }">
-          <button
-            type="button"
-            class="source-trigger"
-            :title="currentOption?.description"
-            @click="sourceMenuOpen = !sourceMenuOpen"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <path d="M4 6h16" />
-              <path d="M4 12h10" />
-              <path d="M4 18h7" />
-              <path d="m17 14 4 4-4 4" />
-            </svg>
-            <span class="source-label">{{ currentOption?.label || '自动' }}</span>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <path d="m6 9 6 6 6-6" />
-            </svg>
-          </button>
-          <div v-if="sourceMenuOpen" class="source-menu" role="listbox">
-            <button
-              v-for="option in sourceOptions"
-              :key="option.value"
-              type="button"
-              class="source-option"
-              :class="{ active: option.value === tokenSource }"
-              role="option"
-              :aria-selected="option.value === tokenSource"
-              @click="pickSource(option.value)"
-            >
-              <strong>{{ option.label }}</strong>
-              <span>{{ option.description }}</span>
-            </button>
-          </div>
-        </div>
-
         <label class="icon-button" for="prompt-file-input" :aria-label="i18n.t('uploadReference')">
           <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 1 1 5.66 5.66L9.64 17.2a2 2 0 0 1-2.83-2.83l8.49-8.48" />
@@ -414,10 +417,16 @@ function onFileChange(event) {
   font-weight: 700;
 }
 
+.composer-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
 .composer-shell {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
   padding: 14px;
   border: 1px solid var(--color-border-strong);
@@ -438,10 +447,10 @@ function onFileChange(event) {
 
 .composer-textarea {
   width: 100%;
-  max-height: 156px;
+  max-height: 200px;
   min-height: 56px;
   padding: 14px 10px;
-  resize: none;
+  resize: vertical;
   border: 0;
   outline: 0;
   background: transparent;
@@ -451,10 +460,10 @@ function onFileChange(event) {
 }
 
 .composer-actions {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
-  padding-bottom: 4px;
 }
 
 .size-picker,
@@ -523,7 +532,7 @@ function onFileChange(event) {
   border-radius: 18px;
   background: var(--color-card-strong);
   box-shadow: var(--shadow-popover);
-  animation: source-menu-pop 180ms cubic-bezier(0.22, 1, 0.36, 1);
+  animation: menu-pop-up 180ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .quality-menu,
@@ -590,7 +599,7 @@ function onFileChange(event) {
   line-height: 1.4;
 }
 
-@keyframes source-menu-pop {
+@keyframes menu-pop-up {
   from {
     opacity: 0;
     transform: translateY(6px) scale(0.98);
@@ -848,15 +857,25 @@ function onFileChange(event) {
     align-items: flex-start;
   }
 
-  .composer-shell {
-    grid-template-columns: 1fr;
-    gap: 4px;
-    border-radius: 24px;
+  .composer-controls {
+    gap: 6px;
   }
 
-  .composer-actions {
-    width: 100%;
-    justify-content: space-between;
+  .size-trigger,
+  .quality-trigger,
+  .source-trigger {
+    height: 34px;
+    padding: 0 10px;
+    font-size: 11px;
+  }
+
+  .size-icon {
+    font-size: 14px;
+  }
+
+  .composer-shell {
+    gap: 10px;
+    border-radius: 24px;
   }
 
   .composer-textarea {

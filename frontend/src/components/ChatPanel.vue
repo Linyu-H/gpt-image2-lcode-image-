@@ -66,6 +66,7 @@ const emit = defineEmits([
   'update:tokenSource',
   'update:imageSize',
   'update:imageQuality',
+  'retry-load',
 ])
 
 const promptChips = [
@@ -118,6 +119,7 @@ const promptChips = [
         :messages="messages"
         @delete="emit('delete', $event)"
         @reuse="emit('reuse', $event)"
+        @retry-load="emit('retry-load', $event)"
       />
     </div>
 
@@ -147,7 +149,7 @@ const promptChips = [
 <style scoped>
 .chat-panel {
   position: relative;
-  min-height: calc(100dvh - 112px);
+  height: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -170,7 +172,7 @@ const promptChips = [
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 26px clamp(18px, 4vw, 58px) 180px;
+  padding: 26px clamp(18px, 4vw, 58px) 320px;
   scroll-behavior: smooth;
 }
 

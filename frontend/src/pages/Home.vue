@@ -113,6 +113,7 @@ function startNewConversation() {
           @clear-file="chatStore.clearSelectedFile()"
           @delete="chatStore.deleteImage($event)"
           @reuse="reusePrompt"
+          @retry-load="chatStore.retryLoadFromHistory($event)"
           @update:token-source="chatStore.setTokenSource($event)"
           @update:image-size="chatStore.setImageSize($event)"
           @update:image-quality="chatStore.setImageQuality($event)"
@@ -297,7 +298,8 @@ function startNewConversation() {
 
 .chat-canvas {
   min-width: 0;
-  min-height: calc(100dvh - 112px);
+  height: calc(100dvh - 112px);
+  overflow: hidden;
 }
 
 .history-scrim {

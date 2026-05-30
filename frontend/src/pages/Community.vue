@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import AppLayout from '../layouts/AppLayout.vue'
+import ConfirmDialog from '../components/ConfirmDialog.vue'
 import { deleteCommunityPost, fetchCommunityFeed } from '../api/image'
 import { useToastStore } from '../stores/toast'
 import { useUserStore } from '../stores/user'
@@ -11,6 +12,8 @@ const toastStore = useToastStore()
 const userStore = useUserStore()
 const posts = ref([])
 const loading = ref(false)
+const confirmDialogOpen = ref(false)
+const pendingDeletePost = ref(null)
 
 async function loadFeed() {
   loading.value = true
@@ -24,17 +27,28 @@ async function loadFeed() {
 }
 
 async function removePost(post) {
-  if (!window.confirm('确认删除这条帖子吗？')) {
-    return
-  }
+  pendingDeletePost.value = post
+  confirmDialogOpen.value = true
+}
+
+async function handleConfirmDelete() {
+  if (!pendingDeletePost.value) return
 
   try {
-    await deleteCommunityPost(post.id)
+    await deleteCommunityPost(pendingDeletePost.value.id)
     toastStore.success('帖子已删除')
     await loadFeed()
   } catch (error) {
     toastStore.error(error.response?.data?.message || '帖子删除失败')
+  } finally {
+    pendingDeletePost.value = null
+    confirmDialogOpen.value = false
   }
+}
+
+function handleCancelDelete() {
+  pendingDeletePost.value = null
+  confirmDialogOpen.value = false
 }
 
 onMounted(loadFeed)
@@ -84,6 +98,18 @@ onMounted(loadFeed)
       </div>
       <div v-else class="empty-community muted">社区里还没有内容，去历史记录页发布你的第一条分享吧。</div>
     </section>
+
+    <ConfirmDialog
+      :open="confirmDialogOpen"
+      title="删除帖子"
+      message="确认删除这条帖子吗？删除后无法恢复。"
+      confirm-text="删除"
+      cancel-text="取消"
+      danger
+      @confirm="handleConfirmDelete"
+      @cancel="handleCancelDelete"
+      @close="confirmDialogOpen = false"
+    />
   </AppLayout>
 </template>
 

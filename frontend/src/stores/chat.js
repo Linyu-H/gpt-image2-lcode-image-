@@ -11,7 +11,15 @@ const imageSizeKey = 'lcode_image_size'
 const imageQualityKey = 'lcode_image_quality'
 
 function resolveErrorMessage(error) {
-  return error?.response?.data?.message || error?.message || '生成失败，请稍后重试'
+  const status = error?.response?.status
+  const message = error?.response?.data?.message || error?.message || '生成失败，请稍后重试'
+
+  // 504 网关超时 - 可能已经生成成功但响应超时
+  if (status === 504) {
+    return '请求超时，图片可能已生成成功，请查看左侧历史记录'
+  }
+
+  return message
 }
 
 function createMessagesStorageKey(userId) {
@@ -198,6 +206,31 @@ export const useChatStore = defineStore('chat', () => {
             stale: false,
           }
         : item)
+
+      // 如果是 504 错误，自动刷新历史记录，可能图片已经生成成功
+      if (error?.response?.status === 504) {
+        await loadHistory()
+        // 检查历史记录中是否有刚才的图片（最近 2 分钟内的）
+        const recentImage = history.value.find(
+          (item) => {
+            const timeDiff = Date.now() - new Date(item.createdAt).getTime()
+            const promptMatch = item.prompt?.trim() === content.trim()
+            return promptMatch && timeDiff < 120000 // 2 分钟内
+          }
+        )
+        if (recentImage) {
+          // 找到了！替换掉失败的消息
+          messages.value = messages.value.map((item) => item.id === pendingMessage.id
+            ? {
+                ...recentImage,
+                type: 'image',
+                role: 'assistant',
+              }
+            : item)
+          toastStore.success('图片已生成成功（从历史记录恢复）')
+          errorMessage.value = ''
+        }
+      }
     } finally {
       loading.value = false
     }
@@ -217,6 +250,37 @@ export const useChatStore = defineStore('chat', () => {
 
   function clearError() {
     errorMessage.value = ''
+  }
+
+  async function retryLoadFromHistory(failedItem) {
+    try {
+      await loadHistory()
+      // 查找最近 2 分钟内相同提示词的图片
+      const recentImage = history.value.find(
+        (item) => {
+          const timeDiff = Date.now() - new Date(item.createdAt).getTime()
+          const promptMatch = item.prompt?.trim() === failedItem.prompt?.trim()
+          return promptMatch && timeDiff < 120000 // 2 分钟内
+        }
+      )
+
+      if (recentImage) {
+        // 找到了！替换掉失败的消息
+        messages.value = messages.value.map((item) => item.id === failedItem.id
+          ? {
+              ...recentImage,
+              type: 'image',
+              role: 'assistant',
+            }
+          : item)
+        toastStore.success('图片已找到并恢复显示')
+        errorMessage.value = ''
+      } else {
+        toastStore.error('未在历史记录中找到该图片')
+      }
+    } catch (error) {
+      toastStore.error('加载历史记录失败')
+    }
   }
 
   return {
@@ -245,5 +309,6 @@ export const useChatStore = defineStore('chat', () => {
     submitPrompt,
     deleteImage,
     clearError,
+    retryLoadFromHistory,
   }
 })

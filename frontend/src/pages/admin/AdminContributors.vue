@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import AdminLayout from '../../layouts/AdminLayout.vue'
+import ConfirmDialog from '../../components/ConfirmDialog.vue'
 import { fetchAdminContributors, updateAdminContributorShare } from '../../api/admin'
 import { useToastStore } from '../../stores/toast'
 import { extractErrorMessage } from '../../utils/errors'
@@ -10,6 +11,8 @@ const toastStore = useToastStore()
 const items = ref([])
 const loading = ref(false)
 const updating = ref({})
+const confirmDialogOpen = ref(false)
+const pendingToggleItem = ref(null)
 
 const activeCount = computed(() => items.value.filter((item) => item.sharePersonalToken).length)
 
@@ -27,9 +30,17 @@ async function loadList() {
 async function toggleShare(item) {
   if (updating.value[item.userId]) return
   const nextEnable = !item.sharePersonalToken
-  if (!nextEnable && !window.confirm(`确认关闭 ${item.username} 的共享吗？关闭后他的 API 将不再被自动选中。`)) {
+  if (!nextEnable) {
+    // 关闭共享需要确认
+    pendingToggleItem.value = item
+    confirmDialogOpen.value = true
     return
   }
+  // 开启共享直接执行
+  await executeToggle(item, nextEnable)
+}
+
+async function executeToggle(item, nextEnable) {
   updating.value[item.userId] = true
   try {
     await updateAdminContributorShare(item.userId, {
@@ -43,6 +54,19 @@ async function toggleShare(item) {
   } finally {
     updating.value[item.userId] = false
   }
+}
+
+function handleConfirmClose() {
+  if (pendingToggleItem.value) {
+    executeToggle(pendingToggleItem.value, false)
+    pendingToggleItem.value = null
+  }
+  confirmDialogOpen.value = false
+}
+
+function handleCancelClose() {
+  pendingToggleItem.value = null
+  confirmDialogOpen.value = false
 }
 
 onMounted(loadList)
@@ -114,6 +138,18 @@ onMounted(loadList)
         </table>
       </div>
     </div>
+
+    <ConfirmDialog
+      :open="confirmDialogOpen"
+      title="关闭共享确认"
+      :message="`确认关闭 ${pendingToggleItem?.username} 的共享吗？关闭后他的 API 将不再被自动选中。`"
+      confirm-text="关闭共享"
+      cancel-text="取消"
+      danger
+      @confirm="handleConfirmClose"
+      @cancel="handleCancelClose"
+      @close="confirmDialogOpen = false"
+    />
   </AdminLayout>
 </template>
 

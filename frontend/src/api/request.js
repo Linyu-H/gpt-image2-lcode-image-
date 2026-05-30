@@ -6,7 +6,7 @@ export const userTokenStorageKey = 'lcode_user_token'
 
 const request = axios.create({
   baseURL,
-  timeout: 300000,
+  timeout: 600000, // 增加到 10 分钟
 })
 
 request.interceptors.request.use((config) => {
