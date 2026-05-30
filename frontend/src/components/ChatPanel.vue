@@ -95,7 +95,7 @@ const promptChips = [
           </svg>
         </div>
         <h2>今天想生成什么照片？</h2>
-        <p>像和豆包聊天一样，把想要的画面、风格、比例或参考图直接发给我。</p>
+        <p>把想要的画面、风格、比例或参考图直接发给我。</p>
         <div class="suggestion-grid">
           <button v-for="chip in promptChips" :key="chip" type="button" @click="emit('update:draft', chip)">
             {{ chip }}
