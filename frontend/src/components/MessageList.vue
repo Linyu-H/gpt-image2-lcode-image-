@@ -34,7 +34,7 @@ const emit = defineEmits(['delete', 'reuse', 'retry-load'])
               <div v-if="item.stale" class="message-hint">页面离开前这次请求的结果无法继续跟踪，你可以去历史记录查看是否已生成成功。</div>
               <div v-else class="message-hint">你可以换个描述，或者重新发送一次。</div>
               <button
-                v-if="item.errorMessage?.includes('504') || item.errorMessage?.includes('超时')"
+                v-if="item.recoverable || item.errorMessage?.includes('504') || item.errorMessage?.includes('超时') || item.errorMessage?.includes('中断')"
                 type="button"
                 class="retry-button"
                 @click="emit('retry-load', item)"
