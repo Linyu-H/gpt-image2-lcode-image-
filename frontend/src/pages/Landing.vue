@@ -68,13 +68,24 @@ const trendSeries = computed(() => {
 
 const sourceSeries = computed(() => {
   const rows = statistics.value?.sourceSplit || []
-  const totals = new Map(rows.map((item) => [item.sourceType, Number(item.total || 0)]))
   const tokens = readChartTokens()
 
-  return [
-    { value: totals.get('shared') || 0, name: i18n.t('sharedToken'), itemStyle: { color: tokens.color1 } },
-    { value: totals.get('private') || 0, name: i18n.t('privateToken'), itemStyle: { color: tokens.color2 } },
-  ]
+  const buckets = {
+    shared: { value: 0, name: i18n.t('sharedToken'), itemStyle: { color: tokens.color1 } },
+    private: { value: 0, name: i18n.t('privateToken'), itemStyle: { color: tokens.color2 } },
+  }
+
+  rows.forEach((item) => {
+    const total = Number(item.total || 0)
+    const type = item.sourceType
+    if (type === 'private') {
+      buckets.private.value += total
+    } else if (type === 'shared' || type === 'contributor') {
+      buckets.shared.value += total
+    }
+  })
+
+  return [buckets.shared, buckets.private]
 })
 
 const retentionSeries = computed(() => {

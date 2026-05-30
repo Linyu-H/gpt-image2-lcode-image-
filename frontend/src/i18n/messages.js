@@ -64,7 +64,7 @@ export const messages = {
     chatGeneration: '聊天式生成',
     guestNotice: '当前是游客体验模式',
     guestLoginHint: '登录账号后可长期保存个人配置与历史',
-    promptPlaceholder: '输入你的图片描述，比如：生成一只在森林中散步的白猫',
+    promptPlaceholder: '输入你的图片描述',
     uploadReference: '上传参考图',
     clearImage: '清除图片',
     enterTip: 'Enter 发送，Ctrl/Cmd + Enter 换行',

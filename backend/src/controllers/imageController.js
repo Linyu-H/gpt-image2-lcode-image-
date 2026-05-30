@@ -34,7 +34,7 @@ export function getContributors(req, res) {
 
 export async function generate(req, res, next) {
   try {
-    const { prompt, agent = 'image' } = req.body
+    const { prompt, agent = 'image', size, quality } = req.body
     validatePrompt(prompt)
 
     const tokenSource = String(req.body?.tokenSource || '').trim()
@@ -69,6 +69,8 @@ export async function generate(req, res, next) {
         upstream = await generateImage({
           prompt,
           agent,
+          size,
+          quality,
           accessToken: candidate.accessToken,
           baseUrl: candidate.baseUrl,
           inputImage: req.file || null,

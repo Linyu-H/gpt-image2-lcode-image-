@@ -103,6 +103,8 @@ function startNewConversation() {
           :username="userStore.user?.username || ''"
           :selected-file-name="chatStore.selectedFileName"
           :token-source="chatStore.tokenSource"
+          :image-size="chatStore.imageSize"
+          :image-quality="chatStore.imageQuality"
           :contributors="chatStore.contributors"
           :has-own-token="Boolean(userStore.profile?.hasPersonalToken)"
           @update:draft="chatStore.draft = $event; chatStore.clearError()"
@@ -112,6 +114,8 @@ function startNewConversation() {
           @delete="chatStore.deleteImage($event)"
           @reuse="reusePrompt"
           @update:token-source="chatStore.setTokenSource($event)"
+          @update:image-size="chatStore.setImageSize($event)"
+          @update:image-quality="chatStore.setImageQuality($event)"
         />
       </main>
     </div>

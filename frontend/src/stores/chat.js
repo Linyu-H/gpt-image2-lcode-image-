@@ -7,6 +7,8 @@ import { useUserStore } from './user'
 const draftKey = 'lcode_prompt_draft'
 const guestMessagesKey = 'lcode_chat_messages_guest'
 const tokenSourceKey = 'lcode_token_source'
+const imageSizeKey = 'lcode_image_size'
+const imageQualityKey = 'lcode_image_quality'
 
 function resolveErrorMessage(error) {
   return error?.response?.data?.message || error?.message || '生成失败，请稍后重试'
@@ -50,6 +52,8 @@ export const useChatStore = defineStore('chat', () => {
   const loading = ref(false)
   const errorMessage = ref('')
   const tokenSource = ref(localStorage.getItem(tokenSourceKey) || 'auto')
+  const imageSize = ref(localStorage.getItem(imageSizeKey) || '1024x1024')
+  const imageQuality = ref(localStorage.getItem(imageQualityKey) || 'hd')
   const contributors = ref([])
 
   watch(draft, (value) => {
@@ -58,6 +62,14 @@ export const useChatStore = defineStore('chat', () => {
 
   watch(tokenSource, (value) => {
     localStorage.setItem(tokenSourceKey, value || 'auto')
+  })
+
+  watch(imageSize, (value) => {
+    localStorage.setItem(imageSizeKey, value || '1024x1024')
+  })
+
+  watch(imageQuality, (value) => {
+    localStorage.setItem(imageQualityKey, value || 'hd')
   })
 
   watch(messages, (value) => {
@@ -109,6 +121,14 @@ export const useChatStore = defineStore('chat', () => {
     tokenSource.value = value || 'auto'
   }
 
+  function setImageSize(value) {
+    imageSize.value = value || '1024x1024'
+  }
+
+  function setImageQuality(value) {
+    imageQuality.value = value || 'hd'
+  }
+
   function setSelectedFile(file) {
     selectedFile.value = file || null
   }
@@ -145,6 +165,8 @@ export const useChatStore = defineStore('chat', () => {
         agent: 'image',
         file,
         tokenSource: tokenSource.value || 'auto',
+        size: imageSize.value || '1024x1024',
+        quality: imageQuality.value || 'hd',
       })
 
       messages.value = messages.value.map((item) => item.id === pendingMessage.id
@@ -209,8 +231,12 @@ export const useChatStore = defineStore('chat', () => {
     userBaseUrl,
     errorMessage,
     tokenSource,
+    imageSize,
+    imageQuality,
     contributors,
     setTokenSource,
+    setImageSize,
+    setImageQuality,
     restoreMessages,
     loadHistory,
     loadContributors,

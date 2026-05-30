@@ -23,6 +23,12 @@ export async function generateImage(payload) {
     if (payload.tokenSource) {
       formData.append('tokenSource', payload.tokenSource)
     }
+    if (payload.size) {
+      formData.append('size', payload.size)
+    }
+    if (payload.quality) {
+      formData.append('quality', payload.quality)
+    }
     formData.append('file', payload.file)
     const { data } = await request.post('/images/generate', formData)
     return data

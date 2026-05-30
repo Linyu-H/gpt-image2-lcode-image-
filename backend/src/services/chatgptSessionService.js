@@ -52,12 +52,12 @@ export async function testImageApi({ accessToken: authToken, baseUrl }) {
   }
 }
 
-function buildJsonPayload({ prompt }) {
+function buildJsonPayload({ prompt, size, quality }) {
   const payload = {
     model: env.image2ApiModel,
     prompt,
-    size: env.image2ApiSize,
-    quality: env.image2ApiQuality,
+    size: size || env.image2ApiSize,
+    quality: quality || env.image2ApiQuality,
     n: env.image2ApiCount,
   }
 
@@ -68,12 +68,12 @@ function buildJsonPayload({ prompt }) {
   return payload
 }
 
-function buildMultipartPayload({ prompt, inputImage }) {
+function buildMultipartPayload({ prompt, inputImage, size, quality }) {
   const form = new FormData()
   form.append('model', env.image2ApiModel)
   form.append('prompt', prompt)
-  form.append('size', env.image2ApiSize)
-  form.append('quality', env.image2ApiQuality)
+  form.append('size', size || env.image2ApiSize)
+  form.append('quality', quality || env.image2ApiQuality)
   form.append('n', String(env.image2ApiCount))
   if (env.image2ApiStyle) {
     form.append('style', env.image2ApiStyle)
@@ -85,15 +85,15 @@ function buildMultipartPayload({ prompt, inputImage }) {
   return form
 }
 
-async function postGenerateRequest({ prompt, authToken, baseUrl }) {
-  return axios.post(joinUrl(baseUrl, env.image2ApiGeneratePath), buildJsonPayload({ prompt }), {
+async function postGenerateRequest({ prompt, authToken, baseUrl, size, quality }) {
+  return axios.post(joinUrl(baseUrl, env.image2ApiGeneratePath), buildJsonPayload({ prompt, size, quality }), {
     headers: buildHeaders(authToken),
     timeout: env.image2ApiTimeout,
   })
 }
 
-async function postEditRequest({ prompt, authToken, baseUrl, inputImage }) {
-  const form = buildMultipartPayload({ prompt, inputImage })
+async function postEditRequest({ prompt, authToken, baseUrl, inputImage, size, quality }) {
+  const form = buildMultipartPayload({ prompt, inputImage, size, quality })
   return axios.post(joinUrl(baseUrl, env.image2ApiEditPath), form, {
     headers: {
       Authorization: `Bearer ${authToken}`,
@@ -104,7 +104,7 @@ async function postEditRequest({ prompt, authToken, baseUrl, inputImage }) {
   })
 }
 
-export async function generateImage({ prompt, agent, accessToken: authToken, baseUrl, inputImage = null }) {
+export async function generateImage({ prompt, agent, accessToken: authToken, baseUrl, inputImage = null, size = null, quality = null }) {
   if (!authToken) {
     throw createUpstreamError('缺少可用身份令牌', 400)
   }
@@ -115,8 +115,8 @@ export async function generateImage({ prompt, agent, accessToken: authToken, bas
 
   try {
     const response = inputImage
-      ? await postEditRequest({ prompt, authToken, baseUrl, inputImage })
-      : await postGenerateRequest({ prompt, authToken, baseUrl })
+      ? await postEditRequest({ prompt, authToken, baseUrl, inputImage, size, quality })
+      : await postGenerateRequest({ prompt, authToken, baseUrl, size, quality })
 
     const imageUrl = extractImageUrl(response.data)
     if (!imageUrl) {
@@ -129,7 +129,8 @@ export async function generateImage({ prompt, agent, accessToken: authToken, bas
         prompt,
         agent,
         model: env.image2ApiModel,
-        size: env.image2ApiSize,
+        size: size || env.image2ApiSize,
+        quality: quality || env.image2ApiQuality,
       },
     }
   } catch (error) {

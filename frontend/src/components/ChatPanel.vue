@@ -38,6 +38,14 @@ defineProps({
     type: String,
     default: 'auto',
   },
+  imageSize: {
+    type: String,
+    default: '1024x1024',
+  },
+  imageQuality: {
+    type: String,
+    default: 'hd',
+  },
   contributors: {
     type: Array,
     default: () => [],
@@ -56,6 +64,8 @@ const emit = defineEmits([
   'select-file',
   'clear-file',
   'update:tokenSource',
+  'update:imageSize',
+  'update:imageQuality',
 ])
 
 const promptChips = [
@@ -118,6 +128,8 @@ const promptChips = [
         :is-logged-in="isLoggedIn"
         :selected-file-name="selectedFileName"
         :token-source="tokenSource"
+        :image-size="imageSize"
+        :image-quality="imageQuality"
         :contributors="contributors"
         :has-own-token="hasOwnToken"
         @update:model-value="emit('update:draft', $event)"
@@ -125,6 +137,8 @@ const promptChips = [
         @select-file="emit('select-file', $event)"
         @clear-file="emit('clear-file')"
         @update:token-source="emit('update:tokenSource', $event)"
+        @update:image-size="emit('update:imageSize', $event)"
+        @update:image-quality="emit('update:imageQuality', $event)"
       />
     </div>
   </section>
