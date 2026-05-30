@@ -376,6 +376,108 @@ export function getStatistics(req, res) {
   res.json(buildStatisticsPayload())
 }
 
+function maskToken(token) {
+  if (!token) return ''
+  const trimmed = String(token)
+  if (trimmed.length <= 6) return '*'.repeat(trimmed.length)
+  return `${trimmed.slice(0, 4)}…${trimmed.slice(-2)}`
+}
+
+export function listContributors(req, res) {
+  const rows = db.prepare(`
+    SELECT
+      users.id as userId,
+      users.username,
+      users.email,
+      users.is_banned as isBanned,
+      user_profiles.personal_token_encrypted as personalTokenEncrypted,
+      user_profiles.personal_image_api_base_url as personalImageApiBaseUrl,
+      user_profiles.share_personal_token as sharePersonalToken,
+      user_profiles.share_disabled_reason as shareDisabledReason,
+      user_profiles.share_disabled_at as shareDisabledAt,
+      user_profiles.updated_at as updatedAt,
+      user_profiles.avatar_url as avatarUrl,
+      user_profiles.avatar_storage_path as avatarStoragePath
+    FROM user_profiles
+    JOIN users ON users.id = user_profiles.user_id
+    WHERE
+      user_profiles.share_personal_token = 1
+      OR (user_profiles.share_disabled_reason IS NOT NULL AND user_profiles.share_disabled_reason <> '')
+    ORDER BY user_profiles.share_personal_token DESC, user_profiles.updated_at DESC
+  `).all()
+
+  const usageRows = db.prepare(`
+    SELECT token_contributor_user_id as contributorUserId, COUNT(*) as totalUsage
+    FROM generated_images
+    WHERE token_contributor_user_id IS NOT NULL
+    GROUP BY token_contributor_user_id
+  `).all()
+  const usageMap = new Map(usageRows.map((row) => [row.contributorUserId, row.totalUsage]))
+
+  res.json(rows.map((row) => {
+    const decrypted = decrypt(row.personalTokenEncrypted || '')
+    return {
+      userId: row.userId,
+      username: row.username,
+      email: row.email,
+      isBanned: row.isBanned === 1,
+      sharePersonalToken: row.sharePersonalToken === 1,
+      shareDisabledReason: row.shareDisabledReason || '',
+      shareDisabledAt: row.shareDisabledAt || '',
+      personalImageApiBaseUrl: row.personalImageApiBaseUrl || '',
+      maskedToken: maskToken(decrypted),
+      hasPersonalToken: Boolean(decrypted),
+      totalUsage: usageMap.get(row.userId) || 0,
+      updatedAt: row.updatedAt || '',
+      avatarUrl: normalizePublicImageUrl(row.avatarUrl || '', row.avatarStoragePath || ''),
+    }
+  }))
+}
+
+export function updateContributorShare(req, res) {
+  const userId = String(req.params.id || '').trim()
+  const enable = req.body?.sharePersonalToken === true
+  const reason = String(req.body?.reason || '').trim()
+
+  if (!userId) {
+    return res.status(400).json({ message: '用户不存在' })
+  }
+
+  const profile = db.prepare(`
+    SELECT user_profiles.user_id as userId, user_profiles.personal_token_encrypted as personalTokenEncrypted
+    FROM user_profiles
+    WHERE user_profiles.user_id = ?
+  `).get(userId)
+
+  if (!profile) {
+    return res.status(404).json({ message: '该用户尚未配置个人资料' })
+  }
+
+  if (enable && !decrypt(profile.personalTokenEncrypted || '')) {
+    return res.status(400).json({ message: '该用户没有可共享的个人身份令牌' })
+  }
+
+  db.prepare(`
+    UPDATE user_profiles
+    SET
+      share_personal_token = ?,
+      share_disabled_reason = CASE WHEN ? = 1 THEN '' ELSE ? END,
+      share_disabled_at = CASE WHEN ? = 1 THEN '' ELSE ? END,
+      updated_at = ?
+    WHERE user_id = ?
+  `).run(
+    enable ? 1 : 0,
+    enable ? 1 : 0,
+    reason || (enable ? '' : '管理员关闭'),
+    enable ? 1 : 0,
+    nowIso(),
+    nowIso(),
+    userId,
+  )
+
+  res.json({ message: enable ? '已启用该用户的共享' : '已关闭该用户的共享' })
+}
+
 // 管理员添加linuxdo connect配置
 export function setLinuxdoSetting(req, res) {
   const clientId = String(req.body?.clientId ?? req.body?.client_id ?? '').trim()

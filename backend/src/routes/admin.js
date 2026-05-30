@@ -14,6 +14,7 @@ import {
   getLinuxdoSetting,
   getStatistics,
   getUsers,
+  listContributors,
   login,
   removeFeaturedPrompt,
   resetUserPassword,
@@ -26,6 +27,7 @@ import {
   setLinuxdoSetting,
   testUpstreamConfig,
   testUserKey,
+  updateContributorShare,
   updateUserBanStatus,
 } from '../controllers/adminController.js'
 import { requireAdmin } from '../middleware/auth.js'
@@ -57,6 +59,8 @@ router.get('/images', requireAdmin, getAdminImages)
 router.delete('/images/:id', requireAdmin, deleteAdminImage)
 router.post('/images/clear', requireAdmin, clearAllGeneratedImages)
 router.get('/statistics', requireAdmin, getStatistics)
+router.get('/contributors', requireAdmin, listContributors)
+router.post('/contributors/:id/share', requireAdmin, updateContributorShare)
 router.get('/linuxdo-connect', requireAdmin, getLinuxdoSetting)
 router.post('/linuxdo-connect', requireAdmin, setLinuxdoSetting)
 

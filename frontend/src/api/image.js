@@ -20,12 +20,20 @@ export async function generateImage(payload) {
     const formData = new FormData()
     formData.append('prompt', payload.prompt)
     formData.append('agent', payload.agent || 'image')
+    if (payload.tokenSource) {
+      formData.append('tokenSource', payload.tokenSource)
+    }
     formData.append('file', payload.file)
     const { data } = await request.post('/images/generate', formData)
     return data
   }
 
   const { data } = await request.post('/images/generate', payload)
+  return data
+}
+
+export async function fetchContributors() {
+  const { data } = await request.get('/images/contributors')
   return data
 }
 

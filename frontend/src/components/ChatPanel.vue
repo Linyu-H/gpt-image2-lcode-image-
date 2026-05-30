@@ -34,9 +34,29 @@ defineProps({
     type: String,
     default: '',
   },
+  tokenSource: {
+    type: String,
+    default: 'auto',
+  },
+  contributors: {
+    type: Array,
+    default: () => [],
+  },
+  hasOwnToken: {
+    type: Boolean,
+    default: false,
+  },
 })
 
-const emit = defineEmits(['update:draft', 'submit', 'delete', 'reuse', 'select-file', 'clear-file'])
+const emit = defineEmits([
+  'update:draft',
+  'submit',
+  'delete',
+  'reuse',
+  'select-file',
+  'clear-file',
+  'update:tokenSource',
+])
 
 const promptChips = [
   '把普通自拍变成电影海报质感',
@@ -97,10 +117,14 @@ const promptChips = [
         :loading="loading"
         :is-logged-in="isLoggedIn"
         :selected-file-name="selectedFileName"
+        :token-source="tokenSource"
+        :contributors="contributors"
+        :has-own-token="hasOwnToken"
         @update:model-value="emit('update:draft', $event)"
         @submit="emit('submit')"
         @select-file="emit('select-file', $event)"
         @clear-file="emit('clear-file')"
+        @update:token-source="emit('update:tokenSource', $event)"
       />
     </div>
   </section>

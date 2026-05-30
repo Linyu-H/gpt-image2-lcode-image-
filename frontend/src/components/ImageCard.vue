@@ -47,7 +47,7 @@ onBeforeUnmount(() => {
     </div>
     <div class="image-body">
       <div class="image-meta">
-        <span class="source-chip">{{ item.sourceType === 'private' ? i18n.t('privateToken') : i18n.t('sharedToken') }}</span>
+        <span class="source-chip">{{ item.sourceType === 'private' ? i18n.t('privateToken') : item.sourceType === 'contributor' ? '贡献者共享' : i18n.t('sharedToken') }}</span>
         <span class="muted">{{ remainingText }}</span>
       </div>
       <p class="image-prompt">{{ item.prompt }}</p>

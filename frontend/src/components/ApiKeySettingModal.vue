@@ -19,19 +19,30 @@ const userStore = useUserStore()
 const toastStore = useToastStore()
 const draftBaseUrl = ref('')
 const draftValue = ref('')
+const draftShare = ref(false)
 const message = ref('')
 const testing = ref(false)
 const saving = ref(false)
 
 const isLoggedIn = computed(() => userStore.isLoggedIn)
+const shareDisabledReason = computed(() => userStore.profile?.shareDisabledReason || '')
+const shareTokenAvailable = computed(() => Boolean(draftValue.value.trim() || userStore.profile?.hasPersonalToken))
 
 watch(() => props.open, (value) => {
   if (value) {
     draftBaseUrl.value = userStore.profile?.personalImageApiBaseUrl || ''
     draftValue.value = userStore.profile?.personalToken || ''
+    draftShare.value = userStore.profile?.sharePersonalToken === true
     message.value = ''
     testing.value = false
     saving.value = false
+  }
+})
+
+watch(draftShare, (value) => {
+  if (value && !shareTokenAvailable.value) {
+    draftShare.value = false
+    toastStore.error('请先填写个人身份令牌再开启共享')
   }
 })
 
@@ -71,11 +82,15 @@ async function save() {
     await saveUserProfile({
       personalToken: draftValue.value.trim(),
       personalImageApiBaseUrl: draftBaseUrl.value.trim(),
+      sharePersonalToken: draftShare.value === true,
     })
     userStore.setProfile({
+      ...(userStore.profile || {}),
       personalToken: draftValue.value.trim(),
       personalImageApiBaseUrl: draftBaseUrl.value.trim(),
-      hasPersonalToken: Boolean(draftValue.value.trim()),
+      hasPersonalToken: Boolean(draftValue.value.trim()) || Boolean(userStore.profile?.hasPersonalToken),
+      sharePersonalToken: draftShare.value === true,
+      shareDisabledReason: draftShare.value ? '' : (userStore.profile?.shareDisabledReason || ''),
       updatedAt: new Date().toISOString(),
     })
     message.value = '个人配置已保存'
@@ -112,6 +127,16 @@ function close() {
               <textarea v-model="draftValue" class="textarea" placeholder="请输入你自己的身份令牌" />
             </label>
             <p class="muted modal-tip">登录后，生成图片会优先使用你自己的配置；没有个人令牌时才会回退到管理员共享配置。</p>
+            <label class="share-row" :class="{ disabled: !shareTokenAvailable }">
+              <span>
+                <strong>共享给社区使用</strong>
+                <em class="muted">开启后其他用户可在“自动 / 贡献者”模式中调用你的 API。系统调用失败会自动关闭共享。</em>
+              </span>
+              <input v-model="draftShare" type="checkbox" class="switch" role="switch" :disabled="!shareTokenAvailable" />
+            </label>
+            <p v-if="!draftShare && shareDisabledReason" class="muted share-hint">
+              上次因「{{ shareDisabledReason }}」自动关闭，重新打开开关即可恢复共享。
+            </p>
             <div class="saved-config muted">
               <p>当前个人地址：<strong>{{ chatStore.userBaseUrl || '-' }}</strong></p>
               <p>当前个人令牌：<strong>{{ chatStore.userApiKey || '-' }}</strong></p>
@@ -233,5 +258,87 @@ function close() {
   justify-content: flex-end;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+.share-row {
+  margin-top: 14px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: var(--color-card-muted);
+}
+
+.share-row.disabled {
+  opacity: 0.6;
+}
+
+.share-row span {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  line-height: 1.5;
+}
+
+.share-row strong {
+  font-size: 14px;
+  color: var(--color-text);
+}
+
+.share-row em {
+  font-style: normal;
+  font-size: 12px;
+}
+
+.share-hint {
+  margin: 8px 2px 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.switch {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 44px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--color-card-strong);
+  border: 1px solid var(--color-border-strong);
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  flex-shrink: 0;
+  margin: 0;
+}
+
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 2px;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18);
+  transition: left 0.2s ease;
+}
+
+.switch:checked {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.switch:checked::after {
+  left: calc(100% - 20px);
+}
+
+.switch:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 </style>

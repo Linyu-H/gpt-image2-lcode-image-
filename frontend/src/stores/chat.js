@@ -1,11 +1,12 @@
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
-import { deleteImage as removeImageRequest, fetchHistory, generateImage } from '../api/image'
+import { deleteImage as removeImageRequest, fetchContributors, fetchHistory, generateImage } from '../api/image'
 import { useToastStore } from './toast'
 import { useUserStore } from './user'
 
 const draftKey = 'lcode_prompt_draft'
 const guestMessagesKey = 'lcode_chat_messages_guest'
+const tokenSourceKey = 'lcode_token_source'
 
 function resolveErrorMessage(error) {
   return error?.response?.data?.message || error?.message || '生成失败，请稍后重试'
@@ -48,9 +49,15 @@ export const useChatStore = defineStore('chat', () => {
   const selectedFile = ref(null)
   const loading = ref(false)
   const errorMessage = ref('')
+  const tokenSource = ref(localStorage.getItem(tokenSourceKey) || 'auto')
+  const contributors = ref([])
 
   watch(draft, (value) => {
     localStorage.setItem(draftKey, value)
+  })
+
+  watch(tokenSource, (value) => {
+    localStorage.setItem(tokenSourceKey, value || 'auto')
   })
 
   watch(messages, (value) => {
@@ -90,6 +97,18 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
+  async function loadContributors() {
+    try {
+      contributors.value = await fetchContributors()
+    } catch {
+      contributors.value = []
+    }
+  }
+
+  function setTokenSource(value) {
+    tokenSource.value = value || 'auto'
+  }
+
   function setSelectedFile(file) {
     selectedFile.value = file || null
   }
@@ -125,6 +144,7 @@ export const useChatStore = defineStore('chat', () => {
         prompt: content,
         agent: 'image',
         file,
+        tokenSource: tokenSource.value || 'auto',
       })
 
       messages.value = messages.value.map((item) => item.id === pendingMessage.id
@@ -134,7 +154,15 @@ export const useChatStore = defineStore('chat', () => {
             role: 'assistant',
           }
         : item)
-      toastStore.success('图片任务已完成，可以继续下一条了')
+      const fallbackTip = image?.fallback?.disabledContributors?.length
+        ? `已自动切换到${image.tokenSourceUsed === 'contributor' ? `贡献者「${image.contributorUsername}」` : image.tokenSourceUsed === 'shared' ? '管理员共享' : '你自己的配置'}，并关闭失效贡献者：${image.fallback.disabledContributors.map((item) => item.username || item.contributorUserId).join('、')}`
+        : ''
+      if (fallbackTip) {
+        toastStore.error(fallbackTip)
+        await loadContributors()
+      } else {
+        toastStore.success('图片任务已完成，可以继续下一条了')
+      }
       await loadHistory()
     } catch (error) {
       const message = resolveErrorMessage(error)
@@ -180,8 +208,12 @@ export const useChatStore = defineStore('chat', () => {
     userApiKey,
     userBaseUrl,
     errorMessage,
+    tokenSource,
+    contributors,
+    setTokenSource,
     restoreMessages,
     loadHistory,
+    loadContributors,
     setSelectedFile,
     clearSelectedFile,
     submitPrompt,

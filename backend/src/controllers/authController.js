@@ -63,6 +63,9 @@ function sanitizeProfile(profile, user) {
     personalToken: decrypt(profile?.personal_token_encrypted || ''),
     personalImageApiBaseUrl: profile?.personal_image_api_base_url || '',
     hasPersonalToken: Boolean(decrypt(profile?.personal_token_encrypted || '')),
+    sharePersonalToken: profile?.share_personal_token === 1,
+    shareDisabledReason: profile?.share_disabled_reason || '',
+    shareDisabledAt: profile?.share_disabled_at || '',
     avatarUrl: normalizePublicImageUrl(profile?.avatar_url || '', profile?.avatar_storage_path || ''),
     avatarUpdatedAt: profile?.avatar_updated_at || '',
     generationCount: getGenerationCount(user.id),
@@ -366,12 +369,42 @@ export function saveProfile(req, res) {
   const nextToken = String(req.body?.personalToken || '').trim()
   const nextBaseUrl = String(req.body?.personalImageApiBaseUrl || '').trim()
   const savedToken = nextToken || decrypt(profile?.personal_token_encrypted || '')
+  const sharedRequest = req.body?.sharePersonalToken
+  const previousShare = profile?.share_personal_token === 1
+  const nextShare = sharedRequest === true ? 1 : sharedRequest === false ? 0 : (previousShare ? 1 : 0)
+
+  if (nextShare === 1 && !savedToken) {
+    return res.status(400).json({ message: '没有可共享的身份令牌，请先填写个人令牌再开启共享' })
+  }
+
+  const becameDisabled = previousShare && nextShare === 0
+  const becameEnabled = !previousShare && nextShare === 1
 
   db.prepare(`
     UPDATE user_profiles
-    SET personal_token_encrypted = ?, personal_image_api_base_url = ?, updated_at = ?
+    SET
+      personal_token_encrypted = ?,
+      personal_image_api_base_url = ?,
+      share_personal_token = ?,
+      share_disabled_reason = CASE WHEN ? = 1 THEN '' ELSE share_disabled_reason END,
+      share_disabled_at = CASE
+        WHEN ? = 1 THEN ''
+        WHEN ? = 1 THEN ?
+        ELSE share_disabled_at
+      END,
+      updated_at = ?
     WHERE user_id = ?
-  `).run(encrypt(savedToken), nextBaseUrl, nowIso(), req.user.id)
+  `).run(
+    encrypt(savedToken),
+    nextBaseUrl,
+    nextShare,
+    becameEnabled ? 1 : 0,
+    becameEnabled ? 1 : 0,
+    becameDisabled ? 1 : 0,
+    nowIso(),
+    nowIso(),
+    req.user.id,
+  )
 
   res.json({ message: '个人配置已保存' })
 }

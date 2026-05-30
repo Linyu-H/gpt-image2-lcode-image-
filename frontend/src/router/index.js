@@ -13,6 +13,7 @@ import AdminDashboard from '../pages/admin/AdminDashboard.vue'
 import AdminConfig from '../pages/admin/AdminConfig.vue'
 import AdminUsers from '../pages/admin/AdminUsers.vue'
 import AdminImages from '../pages/admin/AdminImages.vue'
+import AdminContributors from '../pages/admin/AdminContributors.vue'
 import { adminTokenStorageKey, userTokenStorageKey } from '../api/request'
 
 const router = createRouter({
@@ -32,6 +33,7 @@ const router = createRouter({
     { path: '/admin/config', name: 'admin-config', component: AdminConfig },
     { path: '/admin/users', name: 'admin-users', component: AdminUsers },
     { path: '/admin/images', name: 'admin-images', component: AdminImages },
+    { path: '/admin/contributors', name: 'admin-contributors', component: AdminContributors },
   ],
   scrollBehavior() {
     return { top: 0, behavior: 'smooth' }
@@ -39,7 +41,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to) => {
-  if (['admin-dashboard', 'admin-config', 'admin-users', 'admin-images'].includes(to.name)) {
+  if (['admin-dashboard', 'admin-config', 'admin-users', 'admin-images', 'admin-contributors'].includes(to.name)) {
     const token = localStorage.getItem(adminTokenStorageKey)
     if (!token) {
       return '/admin/login'

@@ -15,6 +15,7 @@ onMounted(async () => {
     chatStore.restoreMessages()
   }
   await chatStore.loadHistory()
+  chatStore.loadContributors()
 
   if (window.innerWidth < 1024) {
     sidebarOpen.value = false
@@ -101,12 +102,16 @@ function startNewConversation() {
           :is-logged-in="userStore.isLoggedIn"
           :username="userStore.user?.username || ''"
           :selected-file-name="chatStore.selectedFileName"
+          :token-source="chatStore.tokenSource"
+          :contributors="chatStore.contributors"
+          :has-own-token="Boolean(userStore.profile?.hasPersonalToken)"
           @update:draft="chatStore.draft = $event; chatStore.clearError()"
           @submit="handleSubmit"
           @select-file="chatStore.setSelectedFile($event)"
           @clear-file="chatStore.clearSelectedFile()"
           @delete="chatStore.deleteImage($event)"
           @reuse="reusePrompt"
+          @update:token-source="chatStore.setTokenSource($event)"
         />
       </main>
     </div>

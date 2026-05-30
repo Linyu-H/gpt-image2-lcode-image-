@@ -134,3 +134,13 @@ export async function saveLinuxdoSetting(payload) {
   const { data } = await request.post('/admin/linuxdo-connect', payload)
   return data
 }
+
+export async function fetchAdminContributors() {
+  const { data } = await request.get('/admin/contributors')
+  return data
+}
+
+export async function updateAdminContributorShare(userId, payload) {
+  const { data } = await request.post(`/admin/contributors/${userId}/share`, payload)
+  return data
+}

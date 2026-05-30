@@ -70,8 +70,16 @@ onMounted(loadPost)
       <article v-else-if="post" class="detail-card">
         <div class="detail-author">
           <img class="detail-avatar" :src="post.avatarUrl || '/lcode-image-logo.png'" alt="用户头像" />
-          <div>
-            <strong>{{ post.username }}</strong>
+          <div class="detail-author-info">
+            <strong>
+              {{ post.username }}
+              <span v-if="post.authorIsContributor" class="detail-contributor" title="该用户开放了个人 API 共享">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M12 2 14.09 8.26 20.5 8.27l-5.18 3.76L17.18 19 12 15.27 6.82 19l1.86-6.97L3.5 8.27l6.41-.01Z" />
+                </svg>
+                贡献者
+              </span>
+            </strong>
             <p class="muted">发布于 {{ formatDateTime(post.createdAt) }}</p>
             <p class="muted">到期时间：{{ formatDateTime(post.expiresAt) }}</p>
           </div>
@@ -121,6 +129,29 @@ onMounted(loadPost)
   display: flex;
   align-items: center;
   gap: 14px;
+  flex-wrap: wrap;
+}
+
+.detail-author-info {
+  min-width: 0;
+}
+
+.detail-author-info strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.detail-contributor {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .detail-avatar {

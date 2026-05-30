@@ -65,6 +65,13 @@ function logout() {
           </svg>
           <span>{{ i18n.t('adminImages') }}</span>
         </RouterLink>
+
+        <RouterLink to="/admin/contributors" class="admin-nav-item" :class="{ active: isActive('/admin/contributors') }">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2 14.09 8.26 20.5 8.27l-5.18 3.76L17.18 19 12 15.27 6.82 19l1.86-6.97L3.5 8.27l6.41-.01Z" />
+          </svg>
+          <span>API 贡献者</span>
+        </RouterLink>
       </nav>
 
       <div class="admin-sidebar-footer">

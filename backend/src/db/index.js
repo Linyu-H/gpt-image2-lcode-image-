@@ -114,10 +114,22 @@ if (!profileColumns.includes('created_at')) {
 if (!profileColumns.includes('updated_at')) {
   db.prepare('ALTER TABLE user_profiles ADD COLUMN updated_at TEXT NOT NULL DEFAULT ""').run()
 }
+if (!profileColumns.includes('share_personal_token')) {
+  db.prepare('ALTER TABLE user_profiles ADD COLUMN share_personal_token INTEGER NOT NULL DEFAULT 0').run()
+}
+if (!profileColumns.includes('share_disabled_reason')) {
+  db.prepare('ALTER TABLE user_profiles ADD COLUMN share_disabled_reason TEXT NOT NULL DEFAULT ""').run()
+}
+if (!profileColumns.includes('share_disabled_at')) {
+  db.prepare('ALTER TABLE user_profiles ADD COLUMN share_disabled_at TEXT NOT NULL DEFAULT ""').run()
+}
 
 const generatedColumns = getColumns('generated_images')
 if (!generatedColumns.includes('user_id')) {
   db.prepare('ALTER TABLE generated_images ADD COLUMN user_id TEXT').run()
+}
+if (!generatedColumns.includes('token_contributor_user_id')) {
+  db.prepare('ALTER TABLE generated_images ADD COLUMN token_contributor_user_id TEXT').run()
 }
 
 const logColumns = getColumns('generation_logs')

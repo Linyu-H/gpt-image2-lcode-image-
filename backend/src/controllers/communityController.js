@@ -12,6 +12,7 @@ function normalizePost(post) {
     ...post,
     imageUrl: normalizePublicImageUrl(post.imageUrl, post.imageStoragePath),
     avatarUrl: normalizePublicImageUrl(post.avatarUrl, post.avatarStoragePath),
+    authorIsContributor: post.authorSharePersonalToken === 1,
   }
 }
 
@@ -22,6 +23,8 @@ function buildPostBaseQuery(whereClause = 'community_posts.status = \'active\'')
       community_posts.image_id as imageId,
       community_posts.image_url as imageUrl,
       generated_images.storage_path as imageStoragePath,
+      generated_images.token_contributor_user_id as contributorUserId,
+      contributor_user.username as contributorUsername,
       community_posts.prompt,
       community_posts.content,
       community_posts.created_at as createdAt,
@@ -29,11 +32,13 @@ function buildPostBaseQuery(whereClause = 'community_posts.status = \'active\'')
       users.id as userId,
       users.username,
       user_profiles.avatar_url as avatarUrl,
-      user_profiles.avatar_storage_path as avatarStoragePath
+      user_profiles.avatar_storage_path as avatarStoragePath,
+      user_profiles.share_personal_token as authorSharePersonalToken
     FROM community_posts
     JOIN users ON users.id = community_posts.user_id
     LEFT JOIN user_profiles ON user_profiles.user_id = users.id
     LEFT JOIN generated_images ON generated_images.id = community_posts.image_id
+    LEFT JOIN users as contributor_user ON contributor_user.id = generated_images.token_contributor_user_id
     WHERE ${whereClause}
   `
 }

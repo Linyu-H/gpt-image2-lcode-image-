@@ -2,7 +2,7 @@ import { Router } from 'express'
 import multer from 'multer'
 import os from 'os'
 import path from 'path'
-import { deleteImage, generate, getHistory } from '../controllers/imageController.js'
+import { deleteImage, generate, getContributors, getHistory } from '../controllers/imageController.js'
 import { optionalUser } from '../middleware/auth.js'
 import { rateLimitDaily } from '../middleware/rateLimit.js'
 import { env } from '../config/env.js'
@@ -26,6 +26,7 @@ const upload = multer({
 
 router.post('/generate', optionalUser, rateLimitDaily, upload.single('file'), generate)
 router.get('/history', optionalUser, getHistory)
+router.get('/contributors', optionalUser, getContributors)
 router.delete('/:id', optionalUser, deleteImage)
 
 export default router

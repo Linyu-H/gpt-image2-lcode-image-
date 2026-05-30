@@ -56,8 +56,16 @@ onMounted(loadFeed)
         <article v-for="post in posts" :key="post.id" class="card community-card">
           <div class="community-author">
             <img class="community-avatar" :src="post.avatarUrl || '/lcode-image-logo.png'" alt="用户头像" />
-            <div>
-              <strong>{{ post.username }}</strong>
+            <div class="community-author-info">
+              <strong>
+                {{ post.username }}
+                <span v-if="post.authorIsContributor" class="contributor-tag" title="该用户开放了个人 API 共享">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M12 2 14.09 8.26 20.5 8.27l-5.18 3.76L17.18 19 12 15.27 6.82 19l1.86-6.97L3.5 8.27l6.41-.01Z" />
+                  </svg>
+                  贡献者
+                </span>
+              </strong>
               <p class="muted">发布于 {{ formatDateTime(post.createdAt) }}</p>
             </div>
           </div>
@@ -110,6 +118,30 @@ onMounted(loadFeed)
   align-items: center;
   gap: 12px;
   margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.community-author-info {
+  min-width: 0;
+}
+
+.community-author-info strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.contributor-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
 }
 
 .community-avatar {

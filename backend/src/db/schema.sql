@@ -30,6 +30,9 @@ CREATE TABLE IF NOT EXISTS user_profiles (
   user_id TEXT PRIMARY KEY,
   personal_token_encrypted TEXT DEFAULT '',
   personal_image_api_base_url TEXT DEFAULT '',
+  share_personal_token INTEGER NOT NULL DEFAULT 0,
+  share_disabled_reason TEXT NOT NULL DEFAULT '',
+  share_disabled_at TEXT NOT NULL DEFAULT '',
   avatar_url TEXT NOT NULL DEFAULT '',
   avatar_storage_path TEXT NOT NULL DEFAULT '',
   avatar_updated_at TEXT NOT NULL DEFAULT '',
@@ -46,11 +49,13 @@ CREATE TABLE IF NOT EXISTS generated_images (
   image_url TEXT NOT NULL,
   storage_path TEXT NOT NULL,
   source_type TEXT NOT NULL,
+  token_contributor_user_id TEXT,
   created_at TEXT NOT NULL,
   expires_at TEXT NOT NULL,
   status TEXT NOT NULL,
   request_ip TEXT NOT NULL,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+  FOREIGN KEY (token_contributor_user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS generation_logs (
